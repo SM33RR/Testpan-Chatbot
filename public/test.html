@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testpan India - Examination Services</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0052A3 0%, #003D7A 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 82, 163, 0.15);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo svg {
+            width: 40px;
+            height: 40px;
+        }
+
+        #bot-logo {
+            height: 48px;
+            width: auto;
+            max-width: 180px;
+            object-fit: contain;
+            margin-right: 12px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .nav-links a:hover {
+            opacity: 0.8;
+        }
+
+        .hero {
+            background: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #0052A3;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .cta-button {
+            background: #FF9500;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: #FF8C00;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.4);
+        }
+
+        .services {
+            padding: 60px 0;
+            background: white;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-title h2 {
+            font-size: 36px;
+            color: #0052A3;
+            margin-bottom: 10px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .service-card {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .service-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .service-card p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .footer {
+            background: #333;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .footer p {
+            margin-bottom: 10px;
+        }
+
+        .footer a {
+            color: #FF9500;
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="logo">
+                    <!-- Try to load custom logo image first -->
+                    <img id="bot-logo" src="/logo.png" alt="Testpan Logo" style="display: none;" onerror="document.getElementById('header-logo-svg').style.display='block'; this.style.display='none';" onload="document.getElementById('header-logo-svg').style.display='none'; this.style.display='block';" />
+                    <svg id="header-logo-svg" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="16" fill="white"/>
+                        <path d="M16 8C11.58 8 8 11.58 8 16C8 20.42 11.58 24 16 24C20.42 24 24 20.42 24 16C24 11.58 20.42 8 16 8ZM17 19H15V17H17V19ZM17 15H15V11H17V15Z" fill="#0052A3"/>
+                    </svg>
+                    <span id="site-name">Testpan India</span>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">Services</a></li>
+                    <li><a href="#">About</a></li>
+                    <li><a href="#">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Examination Excellence</h1>
+            <p>Trusted partner for examination center, support and auxiliary services. We securely deliver reliable, convenient, and hassle-free examination experiences.</p>
+            <button class="cta-button">Get Started</button>
+        </div>
+    </section>
+
+    <section class="services">
+        <div class="container">
+            <div class="section-title">
+                <h2>Our Services</h2>
+                <p>Comprehensive examination solutions for educational institutions and corporates</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">💻</div>
+                    <h3>Test Center Booking</h3>
+                    <p>Find, verify, and book computer-based test centers across India with our extensive network.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🛠️</div>
+                    <h3>Center Management</h3>
+                    <p>Tools to manage test centers and bookings through our digital platform BookMyTestCenter.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🏗️</div>
+                    <h3>Center Setup</h3>
+                    <p>Consultancy services to set up computer-based test centers with proper infrastructure.</p>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">👥</div>
+                    <h3>Manpower Services</h3>
+                    <p>Trained examination-day manpower including invigilators, admins, and technical support.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Testpan India Private Limited. All rights reserved.</p>
+            <p>Contact us at <a href="mailto:info@testpanindia.com">info@testpanindia.com</a></p>
+        </div>
+    </footer>
+
+    <!-- Chat Widget Script -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        (() => {
+            const requested = new URLSearchParams(window.location.search).get('site');
+            const aliases = { bmtc: 'bmtc', bookmytestcenter: 'bmtc', manpower: 'manpower', manpowerx: 'manpower' };
+            const site = aliases[String(requested || '').toLowerCase().replace(/[^a-z0-9]/g, '')] || 'testpan';
+            const profiles = {
+                testpan: { name: 'Testpan India', logo: '/logo.png' },
+                bmtc: { name: 'BookMyTestCenter', logo: '/logo2.png' },
+                manpower: { name: 'ManpowerX', logo: '/logo3.png' }
+            };
+            const profile = profiles[site];
+            window.TESTPAN_CHAT_SITE = site;
+            document.getElementById('bot-logo').src = profile.logo;
+            document.getElementById('site-name').textContent = profile.name;
+            document.title = `${profile.name} - Support`;
+        })();
+    </script>
+    <script src="/chatWidget.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</body>
+</html>

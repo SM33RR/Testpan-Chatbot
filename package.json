@@ -1,0 +1,31 @@
+{
+  "name": "testpan-web-chatbot",
+  "version": "3.0.0",
+  "description": "AI-powered web chatbot widget for Testpan India Private Limited",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "dev": "node --env-file=.env --watch server.js"
+  },
+  "keywords": [
+    "chatbot",
+    "widget",
+    "testpan",
+    "socket.io",
+    "ai",
+    "gemini"
+  ],
+  "author": "Testpan India Private Limited",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@google/generative-ai": "^0.12.0",
+    "@mendable/firecrawl-js": "^4.38.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "marked": "^12.0.1",
+    "mongodb": "^7.6.0",
+    "mongoose": "^8.24.4",
+    "socket.io": "^4.7.5"
+  }
+}
