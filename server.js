@@ -50,6 +50,11 @@ app.get('/test.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'test.html'));
 });
 
+// Serve the dedicated widget page for iframe embedding
+app.get('/widget.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'widget.html'));
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
