@@ -17,10 +17,12 @@
   const serverUrl = scriptUrl.origin;
   const siteParam = scriptUrl.searchParams.get('site');
 
+  // Use a timestamp as a cache-busting query parameter.
+  const cacheBuster = `v=${new Date().getTime()}`;
+
   const assets = {
-    socketio: 'https://cdn.socket.io/4.7.2/socket.io.min.js',
-    css: `${serverUrl}/style.css?v=1.0`, // Add versioning to prevent caching issues
-    widget: `${serverUrl}/chatWidget.js`
+    css: `${serverUrl}/style.css?${cacheBuster}`,
+    widget: `${serverUrl}/chatWidget.js?${cacheBuster}`
   };
 
   /**
@@ -59,6 +61,5 @@
 
   // Load assets in the correct order.
   loadCss(assets.css);
-  // Load Socket.IO first, then the main widget script.
-  loadScript(assets.socketio).then(() => loadScript(assets.widget)).catch(console.error);
+  loadScript(assets.widget).catch(console.error);
 })();

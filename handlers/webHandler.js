@@ -84,8 +84,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
           { label: "🏠 Main Menu", value: "menu" }
         ]
       };
-      updateSession(sessionId, { state: 'LEAD_PROMPT', purpose: 'Our Services' });
-      return response;
+      return updateSessionAndReturn(sessionId, { state: 'LEAD_PROMPT', purpose: 'Our Services' }, response);
     }
 
     if (lowerBody === "2") {
@@ -96,8 +95,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
           { label: "🏠 Main Menu", value: "menu" }
         ]
       };
-      updateSession(sessionId, { state: 'LEAD_PROMPT', purpose: 'Partner with us' });
-      return response;
+      return updateSessionAndReturn(sessionId, { state: 'LEAD_PROMPT', purpose: 'Partner with us' }, response);
     }
 
     if (lowerBody === "3") {
@@ -108,8 +106,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
           { label: "🏠 Main Menu", value: "menu" }
         ]
       };
-      updateSession(sessionId, { state: 'LEAD_PROMPT', purpose: 'About Testpan India' });
-      return response;
+      return updateSessionAndReturn(sessionId, { state: 'LEAD_PROMPT', purpose: 'About Testpan India' }, response);
     }
 
     if (lowerBody === "4") {
@@ -120,8 +117,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
           { label: "🏠 Main Menu", value: "menu" }
         ]
       };
-      updateSession(sessionId, { state: 'GREETING' }); // Don't ask for lead on FAQ
-      return response;
+      return updateSessionAndReturn(sessionId, { state: 'GREETING' }, response);
     }
 
     if (lowerBody === "5") {
@@ -132,6 +128,20 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
           { label: "🏠 Main Menu", value: "menu" }
         ]
       };
+    }
+
+    // Handle lead collection states BEFORE attempting to use AI
+    if (session.state === 'LEAD_PROMPT') {
+      // Check if the user is asking a question instead of providing a name
+      if (shouldUseAI(body)) {
+        // The user asked a question, so we fall through to the AI handler below.
+      } else {
+        updateSession(sessionId, { state: 'LEAD_CAPTURE', lead: { name: body } });
+        return {
+          text: `Got it, ${body}! And what's the best phone number to reach you at?`,
+          buttons: [{ label: "🏠 Main Menu", value: "menu" }]
+        };
+      }
     }
 
     // 2. Route Natural Language Questions to AI, even during lead capture
@@ -152,15 +162,6 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
       }
       // Fallback if AI is disabled or fails, but still answer the question
       return getFallbackResponse(body, site);
-    }
-
-    // Handle lead collection states
-    if (session.state === 'LEAD_PROMPT') {
-      updateSession(sessionId, { state: 'LEAD_CAPTURE', lead: { name: body } });
-      return {
-        text: `Got it, ${body}! And what's the best phone number to reach you at?`,
-        buttons: [{ label: "🏠 Main Menu", value: "menu" }]
-      };
     }
 
     if (session.state === 'LEAD_CAPTURE') {
@@ -247,6 +248,17 @@ function getPortalResponse(query) {
   return null;
 }
 
+/**
+ * Helper to update session and then return the response object.
+ * Prevents the code from falling through to other logic blocks.
+ * @param {string} sessionId
+ * @param {object} sessionData
+ * @param {object} response
+ */
+function updateSessionAndReturn(sessionId, sessionData, response) {
+  updateSession(sessionId, sessionData);
+  return response;
+}
 /**
  * Clear session data when user disconnects
  * @param {string} sessionId - Unique identifier for the session/socket

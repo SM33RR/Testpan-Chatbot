@@ -65,9 +65,11 @@
     // Check if running inside an iframe
     const isIframe = window.self !== window.top;
 
-    createWidget(isIframe);
-    if (!isIframe && CONFIG.autoOpen) {
-        setTimeout(toggleWidget, 1000);
+    if (isIframe) {
+      createWidget(true); // Force iframe mode
+    } else {
+      createWidget(false);
+      if (CONFIG.autoOpen) setTimeout(toggleWidget, 1000);
     }
   }
 
@@ -154,13 +156,16 @@
       chatWindow.style.right = '0';
       chatWindow.style.bottom = '0';
       chatWindow.style.position = 'absolute'; // Use absolute to fill container
-      isWidgetOpen = true;
+      
       initializeSocket();
       
       // The main container should also fill the body
       widgetContainer.style.width = '100%';
       widgetContainer.style.height = '100%';
     }
+
+    // Set the global state after creation
+    isWidgetOpen = isIframe;
 
     widgetContainer.appendChild(chatWindow);
 
@@ -253,6 +258,19 @@
             ...data.leadData,
             website: window.location.hostname
           });
+        }
+      });
+
+      // Listen for streamed chunks of an AI response
+      socket.on('bot_chunk', (data) => {
+        const container = document.getElementById('testpan-messages-container');
+        if (!container) return;
+
+        // Find the last bot message's text element
+        const lastMessage = container.querySelector('.testpan-bot-message:last-child .testpan-message-text');
+        if (lastMessage && data.chunk) {
+          // Append the chunk and re-render markdown
+          lastMessage.innerHTML = window.marked.parse(lastMessage.textContent + data.chunk);
         }
       });
 
