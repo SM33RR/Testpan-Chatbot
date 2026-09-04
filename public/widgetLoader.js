@@ -21,8 +21,9 @@
   const cacheBuster = `v=${new Date().getTime()}`;
 
   const assets = {
+    socketio: 'https://cdn.socket.io/4.7.2/socket.io.min.js',
     css: `${serverUrl}/style.css?${cacheBuster}`,
-    widget: `${serverUrl}/chatWidget.js?${cacheBuster}`
+    widget: `${serverUrl}/chatWidget.js?${cacheBuster}`,
   };
 
   /**
@@ -61,5 +62,11 @@
 
   // Load assets in the correct order.
   loadCss(assets.css);
-  loadScript(assets.widget).catch(console.error);
+
+  // Ensure Socket.IO is loaded before attempting to load the main widget script.
+  if (typeof io === 'undefined') {
+    loadScript(assets.socketio).then(() => loadScript(assets.widget)).catch(console.error);
+  } else {
+    loadScript(assets.widget).catch(console.error);
+  }
 })();

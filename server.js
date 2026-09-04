@@ -72,6 +72,7 @@ io.on('connection', (socket) => {
   // Handle incoming messages from client
   socket.on('user_message', async (data) => {
     console.log(`Message from ${socket.id}:`, data);
+    const handlerStart = Date.now();
     
     try {
       const message = typeof data === 'string' ? data : data?.message ?? data?.intent;
@@ -84,17 +85,29 @@ io.on('connection', (socket) => {
       
       // Process the message through the menu handler
       const response = await processMessage(socket.id, message, socket.data.currentSite);
+      console.log(`[AI TIMING] "${message}" — processMessage() resolved in ${Date.now() - handlerStart}ms`);
 
       // Check if the response contains a stream to handle it differently
       if (response.source === 'ai' && response.stream) {
+        const requestStart = response.timing?.requestStart ?? handlerStart;
+        let firstChunkAt = null;
+        let chunkCount = 0;
+
         // 1. Create an empty message bubble on the client
         socket.emit('bot_message', { text: '', buttons: [] });
 
         // 2. Stream chunks to the client to fill the bubble
         for await (const chunk of response.stream) {
+          if (!firstChunkAt) {
+            firstChunkAt = Date.now();
+            console.log(`[AI TIMING] "${message}" — time to first chunk: ${firstChunkAt - requestStart}ms (from processAIQuery start)`);
+          }
+          chunkCount++;
           const chunkText = chunk.text();
           socket.emit('bot_chunk', { chunk: chunkText });
         }
+
+        console.log(`[AI TIMING] "${message}" — stream complete: ${chunkCount} chunks, ${Date.now() - requestStart}ms end-to-end (query start -> last chunk)`);
 
         // 3. After the stream is complete, send the lead generation prompt
         const finalPrompt = {

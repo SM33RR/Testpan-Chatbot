@@ -213,10 +213,9 @@ function getGeminiModel() {
       // gemini-3.6-flash defaults to "medium" thinking, which adds real latency
       // before the first streamed chunk. This bot answers grounded FAQ-style
       // questions from a fixed knowledge base, not multi-step reasoning tasks,
-      // so a low thinking level is enough and noticeably faster.
-      // If it still feels slow, try 'minimal'.
+      // so 'minimal' thinking is enough and is the fastest setting available.
       generationConfig: {
-        thinkingConfig: { thinkingLevel: 'low' }
+        thinkingConfig: { thinkingLevel: 'minimal' }
       }
     });
     return geminiModel;
@@ -253,6 +252,8 @@ function getSiteFallbackContext(site) {
 }
 
 export async function processAIQuery(query, currentSite = 'testpan') {
+  // --- Diagnostic timing (grep for "[AI TIMING]" in logs; safe to remove later) ---
+  const requestStart = Date.now();
   const model = getGeminiModel();
   const site = normalizeSite(currentSite);
   const siteProfile = getSiteProfile(site);
@@ -263,6 +264,7 @@ export async function processAIQuery(query, currentSite = 'testpan') {
   }
 
   try {
+    const searchStart = Date.now();
     let relevantContext = '';
     if (knowledgeBasePages.length > 0) {
       relevantContext = searchRelevantContext(normalizedQuery, knowledgeBasePages, 3, site);
@@ -303,21 +305,27 @@ CONTACT DETAILS:
 
 Source: Testpan India Corporate Database`;
     }
+    console.log(`[AI TIMING] "${query}" — knowledge base search: ${Date.now() - searchStart}ms`);
 
     const contextualQuery = `[ACTIVE SITE]\nKey: ${siteProfile.key}\nBrand: ${siteProfile.name}\nPrimary context: ${siteProfile.primaryContext}\nPriority domains: ${siteProfile.domains.join(', ')}\n\n[KNOWLEDGE BASE CONTEXT]\n${relevantContext}\n\n[USER QUERY]\n${query}\n\n[NORMALIZED INTENT WORDING]\n${normalizedQuery}`;
 
     // Use generateContentStream for real-time response streaming
+    const apiCallStart = Date.now();
     const result = await model.generateContentStream(contextualQuery);
+    console.log(`[AI TIMING] "${query}" — model.generateContentStream() resolved (stream opened) in ${Date.now() - apiCallStart}ms | total before streaming: ${Date.now() - requestStart}ms`);
 
-    // Return the stream directly for the server to handle.
+    // Return the stream directly for the server to handle. requestStart travels
+    // with the result so server.js can log time-to-first-chunk and total
+    // end-to-end time against the same clock.
     return {
       success: true,
       stream: result.stream,
-      source: 'ai'
+      source: 'ai',
+      timing: { requestStart, query }
     };
 
   } catch (error) {
-    console.error('AI processing error:', error);
+    console.error(`[AI TIMING] "${query}" failed after ${Date.now() - requestStart}ms:`, error);
     return {
       success: false,
       response: `I'm having trouble connecting to my AI services right now. Please try again in a moment or select an option from the menu.`,
