@@ -191,7 +191,13 @@
     const chatWindow = document.getElementById('testpan-chat-window');
     const launcher = document.getElementById('testpan-chat-launcher');
 
-    if (chatWindow && launcher) {
+    // Handle iframe case where launcher is null
+    const isIframe = window.self !== window.top;
+    if (isIframe && chatWindow) {
+      // In an iframe, the minimize button should hide the parent iframe.
+      // We send a message to the parent window to handle this.
+      window.parent.postMessage('testpan-chat-close', '*');
+    } else if (chatWindow && launcher) {
       isWidgetOpen = !isWidgetOpen;
       chatWindow.classList.toggle('open', isWidgetOpen);
       launcher.classList.toggle('hidden', isWidgetOpen);

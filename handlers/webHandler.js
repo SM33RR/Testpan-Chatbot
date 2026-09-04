@@ -62,12 +62,6 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
   try {
     const lowerBody = normalizeUserQuery(body);
 
-    // These are business-critical destinations. Resolve them locally before AI/RAG
-    // so the correct portal is returned instantly and cannot be overridden by context.
-    const portalResponse = getPortalResponse(lowerBody);
-    if (portalResponse) {
-      return portalResponse;
-    }
     
     // 1. Intercept Static Navigation & Menu Commands First
     if (lowerBody === "menu" || lowerBody === "0") {
@@ -75,9 +69,16 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
       return getMainMenuResponse(site);
     }
 
+    // These are business-critical destinations. Resolve them locally before AI/RAG
+    // so the correct portal is returned instantly and cannot be overridden by context.
+    const portalResponse = getPortalResponse(lowerBody);
+    if (portalResponse) {
+      return portalResponse;
+    }
+
     if (lowerBody === "1") {
       const response = {
-        text: "💻 **Our Services**\n\n• Computer-Based Testing (CBT) Infrastructure\n• Exam Center Management\n• ManpowerX Workforce & Staffing Solutions\n• BookMyTestCenter Online Booking Portal",
+        text: "💻 **Our Services**\n\nWe specialize in a range of examination solutions:\n\n*   **Computer-Based Testing (CBT)**: End-to-end infrastructure for online exams.\n*   **Exam Center Management**: Comprehensive management of test venues.\n*   **ManpowerX**: Our dedicated workforce and staffing solution.\n*   **BookMyTestCenter**: A one-stop portal for booking exam centers.",
         buttons: [
           { label: "⬅️ Back", value: "0" },
           { label: "🏠 Main Menu", value: "menu" }
@@ -89,7 +90,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
 
     if (lowerBody === "2") {
       const response = {
-        text: "🤝 **Partner With Us**\n\nWe partner with institutions, colleges, and testing centers nationwide. Reach out to set up certified exam venues with full IT & security support.",
+        text: "🤝 **Partner With Us**\n\nWe are always looking to partner with institutions, colleges, and testing centers nationwide. Reach out to our team to learn how you can set up a certified exam venue with our full IT and security support.",
         buttons: [
           { label: "⬅️ Back", value: "0" },
           { label: "🏠 Main Menu", value: "menu" }
@@ -101,7 +102,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
 
     if (lowerBody === "3") {
       const response = {
-        text: "ℹ️ **About Testpan India**\n\nFounded in 2016 by our CEO Rajesh Setia, Testpan India is a premier provider of examination center management, IT infrastructure, and CBT solutions across India.",
+        text: "ℹ️ **About Testpan India**\n\nFounded in 2016 by our CEO, **Mr. Rajesh Setia**, Testpan India is a premier provider of examination center management, IT infrastructure, and computer-based testing (CBT) solutions across India.",
         buttons: [
           { label: "⬅️ Back", value: "0" },
           { label: "🏠 Main Menu", value: "menu" }
@@ -113,7 +114,7 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
 
     if (lowerBody === "4") {
       const response = {
-        text: "⁉️ **Frequently Asked Questions**\n\n• **How do I book a test center for an exam?** Visit https://client.bookmytestcenter.com\n• **How do I register my test center?** Visit https://center.bookmytestcenter.com\n• **What is ManpowerX?** Our dedicated staffing solution for invigilators and exam staff.\n\nType your question directly below to ask our AI assistant!",
+        text: "⁉️ **Frequently Asked Questions**\n\n*   **How do I book a test center for an exam?**\n    You can visit our client portal at https://client.bookmytestcenter.com\n\n*   **How do I register my test center?**\n    To partner with us, please register at https://center.bookmytestcenter.com\n\n*   **What is ManpowerX?**\n    ManpowerX is our dedicated staffing solution for invigilators and exam staff.\n\nFeel free to type your own question below to ask our AI assistant!",
         buttons: [
           { label: "⬅️ Back", value: "0" },
           { label: "🏠 Main Menu", value: "menu" }
@@ -125,12 +126,32 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
 
     if (lowerBody === "5") {
       return {
-        text: "📲 **Customer Support**\n\nYou can reach our support team directly at +91 98101 47334 or email us at info@testpanindia.com.",
+        text: "📲 **Customer Support**\n\nYou can reach our support team directly by:\n\n*   **Phone**: [+91 98101 47334](tel:+919810147334)\n*   **Email**: [info@testpanindia.com](mailto:info@testpanindia.com)",
         buttons: [
           { label: "⬅️ Back", value: "0" },
           { label: "🏠 Main Menu", value: "menu" }
         ]
       };
+    }
+
+    // 2. Route Natural Language Questions to AI, even during lead capture
+    if (shouldUseAI(body)) {
+      if (isAIAvailable()) {
+        const aiResult = await processAIQuery(body, site);
+        if (aiResult.success) {
+          const updatedSession = updateSession(sessionId, { state: 'LEAD_PROMPT', purpose: `AI Query: "${body}"` });
+          return {
+            text: `${aiResult.response}\n\nBy the way, I'd love to share the complete details with you or have our team follow up. What's your name?`,
+            purpose: updatedSession.purpose,
+            buttons: [
+              { label: "⬅️ Back", value: "0" },
+              { label: "🏠 Main Menu", value: "menu" }
+            ]
+          };
+        }
+      }
+      // Fallback if AI is disabled or fails, but still answer the question
+      return getFallbackResponse(body, site);
     }
 
     // Handle lead collection states
@@ -163,35 +184,8 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
       };
     }
 
-    // 2. Route Natural Language Questions to AI
-    if (shouldUseAI(body)) {
-      if (isAIAvailable()) {
-        const aiResult = await processAIQuery(body, site);
-        if (aiResult.success) {
-          const updatedSession = updateSession(sessionId, { state: 'LEAD_PROMPT', purpose: `AI Query: "${body}"` });
-          return {
-            text: `${aiResult.response}\n\nBy the way, I'd love to share the complete details with you or have our team follow up. What's your name?`,
-            purpose: updatedSession.purpose,
-            buttons: [
-              { label: "⬅️ Back", value: "0" },
-              { label: "🏠 Main Menu", value: "menu" }
-            ]
-          };
-        }
-      }
-
-      // Fallback if AI is disabled or fails
-      return {
-        text: getFallbackResponse(body, site),
-        buttons: [
-          { label: "⬅️ Back", value: "0" },
-          { label: "🏠 Main Menu", value: "menu" }
-        ]
-      };
-    }
-
     // Default response if input is unrecognized
-    return getMainMenuResponse("I'm not sure how to help with that. Please choose an option from the menu or type a question directly.");
+    return getMainMenuResponse(site, "I'm not sure how to help with that. Please choose an option from the menu or type a question directly.");
   } catch (error) {
     console.error('Message processing error:', error);
     return {
@@ -207,18 +201,18 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
 /**
  * Helper to build standard main menu response payload
  */
-function getMainMenuResponse(site = 'testpan') {
-  let headerText;
+function getMainMenuResponse(site = 'testpan', customPreamble = null) {
+  let headerText = customPreamble;
   switch (site) {
     case 'bmtc':
-      headerText = "Welcome to BookMyTestCenter! 🏢 How can I help you book or locate an exam test center today?";
+      headerText = headerText || "Welcome to BookMyTestCenter! 🏢 How can I help you book or locate an exam test center today?";
       break;
     case 'manpower':
-      headerText = "Welcome to ManpowerX! 💼 Looking for workforce solutions or job opportunities? Let's get started.";
+      headerText = headerText || "Welcome to ManpowerX! 💼 Looking for workforce solutions or job opportunities? Let's get started.";
       break;
     case 'testpan':
     default:
-      headerText = "Welcome to Testpan India! 🚀 How can we assist you today?";
+      headerText = headerText || "Welcome to Testpan India! 🚀 How can we assist you today?";
       break;
   }
 
