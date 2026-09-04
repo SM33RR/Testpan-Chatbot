@@ -84,9 +84,32 @@ io.on('connection', (socket) => {
       
       // Process the message through the menu handler
       const response = await processMessage(socket.id, message, socket.data.currentSite);
-      
-      // Send response back to client
-      socket.emit('bot_message', response);
+
+      // Check if the response contains a stream to handle it differently
+      if (response.source === 'ai' && response.stream) {
+        // 1. Create an empty message bubble on the client
+        socket.emit('bot_message', { text: '', buttons: [] });
+
+        // 2. Stream chunks to the client to fill the bubble
+        for await (const chunk of response.stream) {
+          const chunkText = chunk.text();
+          socket.emit('bot_chunk', { chunk: chunkText });
+        }
+
+        // 3. After the stream is complete, send the lead generation prompt
+        const finalPrompt = {
+          text: `\n\nBy the way, I'd love to share the complete details with you or have our team follow up. What's your name?`,
+          buttons: [{ label: "⬅️ Back", value: "0" }, { label: "🏠 Main Menu", value: "menu" }]
+        };
+        socket.emit('bot_message', finalPrompt);
+        
+        // 4. Update the session state
+        updateSession(socket.id, { state: 'LEAD_PROMPT', purpose: `AI Query: "${message}"` });
+
+      } else {
+        // Send a normal, non-streamed response
+        socket.emit('bot_message', response);
+      }
     } catch (error) {
       console.error('Error processing message:', error);
       socket.emit('bot_message', {

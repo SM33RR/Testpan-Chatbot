@@ -261,6 +261,21 @@
         }
       });
 
+      // Listen for streamed chunks of an AI response
+      socket.on('bot_chunk', (data) => {
+        const container = document.getElementById('testpan-messages-container');
+        if (!container) return;
+
+        // Find the last bot message's text element
+        const lastMessageText = container.querySelector('.testpan-bot-message:last-child .testpan-message-text');
+        if (lastMessageText && data.chunk) {
+          // Append the new chunk to the existing text content
+          const currentText = lastMessageText.textContent || '';
+          // Re-render the entire message with the new chunk included
+          lastMessageText.innerHTML = window.marked.parse(currentText + data.chunk);
+        }
+      });
+
       socket.on('bot_typing', showTypingIndicator);
 
       socket.on('disconnect', () => {

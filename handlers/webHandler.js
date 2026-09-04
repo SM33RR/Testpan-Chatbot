@@ -149,15 +149,9 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
       if (isAIAvailable()) {
         const aiResult = await processAIQuery(body, site);
         if (aiResult.success) {
-          const updatedSession = updateSession(sessionId, { state: 'LEAD_PROMPT', purpose: `AI Query: "${body}"` });
-          return {
-            text: `${aiResult.response}\n\nBy the way, I'd love to share the complete details with you or have our team follow up. What's your name?`,
-            purpose: updatedSession.purpose,
-            buttons: [
-              { label: "⬅️ Back", value: "0" },
-              { label: "🏠 Main Menu", value: "menu" }
-            ]
-          };
+          // If the result is a stream, return it directly for the server to handle.
+          // This is the fix for the 'undefined' bug.
+          return aiResult;
         }
       }
       // Fallback if AI is disabled or fails, but still answer the question
