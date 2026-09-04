@@ -53,23 +53,36 @@
     '🏠 Main Menu': 'menu'
   };
 
+  function init() {
+    // Check if running inside an iframe
+    const isIframe = window.self !== window.top;
+
+    createWidget(isIframe);
+    if (!isIframe && CONFIG.autoOpen) {
+        setTimeout(toggleWidget, 1000);
+    }
+  }
+
   // Create widget HTML structure
-  function createWidget() {
+  function createWidget(isIframe = false) {
     // Create main container
     const widgetContainer = document.createElement('div');
     widgetContainer.id = 'testpan-chat-widget';
     widgetContainer.className = 'testpan-widget-container';
 
-    // Create launcher button
-    const launcher = document.createElement('button');
-    launcher.id = 'testpan-chat-launcher';
-    launcher.className = 'testpan-launcher';
-    launcher.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="white"/>
-      </svg>
-    `;
-    launcher.addEventListener('click', toggleWidget);
+    // Only create the launcher if not in an iframe
+    if (!isIframe) {
+      const launcher = document.createElement('button');
+      launcher.id = 'testpan-chat-launcher';
+      launcher.className = 'testpan-launcher';
+      launcher.innerHTML = `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 2H4C2.9 2 2 2.9 2 4V22L6 18H20C21.1 18 22 17.1 22 16V4C22 2.9 21.1 2 20 2Z" fill="white"/>
+        </svg>
+      `;
+      launcher.addEventListener('click', toggleWidget);
+      widgetContainer.appendChild(launcher);
+    }
 
     // Create chat window
     const chatWindow = document.createElement('div');
@@ -124,8 +137,23 @@
     chatWindow.appendChild(messagesContainer);
     chatWindow.appendChild(inputArea);
 
-    // Assemble widget
-    widgetContainer.appendChild(launcher);
+    // If in an iframe, open the chat window immediately and apply styles
+    if (isIframe) {
+      chatWindow.classList.add('open');
+      chatWindow.style.width = '100%';
+      chatWindow.style.height = '100%';
+      chatWindow.style.borderRadius = '0';
+      chatWindow.style.right = '0';
+      chatWindow.style.bottom = '0';
+      chatWindow.style.position = 'absolute'; // Use absolute to fill container
+      isWidgetOpen = true;
+      initializeSocket();
+      
+      // The main container should also fill the body
+      widgetContainer.style.width = '100%';
+      widgetContainer.style.height = '100%';
+    }
+
     widgetContainer.appendChild(chatWindow);
 
     // Add to page
@@ -418,9 +446,9 @@
 
   // Initialize widget when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', createWidget);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    createWidget();
+    init();
   }
 
   // Expose toggle function globally
