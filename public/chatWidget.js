@@ -263,16 +263,35 @@
 
       // Listen for streamed chunks of an AI response
       socket.on('bot_chunk', (data) => {
+        if (!data || !data.chunk) return;
+
         const container = document.getElementById('testpan-messages-container');
         if (!container) return;
 
-        // Find the last bot message's text element
-        const lastMessageText = container.querySelector('.testpan-bot-message:last-child .testpan-message-text');
-        if (lastMessageText && data.chunk) {
-          // More efficient: just append the new chunk. The final HTML is already structured.
-          // The 'marked' library will have already created the paragraph tags.
-          lastMessageText.lastChild.textContent += data.chunk;
+        // Find the last bot message (the streaming placeholder created by the
+        // preceding empty 'bot_message') and its text element.
+        const lastMessage = container.querySelector('.testpan-bot-message:last-child');
+        const lastMessageText = lastMessage ? lastMessage.querySelector('.testpan-message-text') : null;
+        if (!lastMessage || !lastMessageText) return;
+
+        // Accumulate the raw text and re-render the full markdown each time.
+        // This is safe even when the message started out empty (no child nodes
+        // to append into) and stays correct if a chunk boundary lands in the
+        // middle of markdown syntax (e.g. '**bold**' split across chunks).
+        const updatedText = (lastMessage.dataset.rawText || '') + data.chunk;
+        lastMessage.dataset.rawText = updatedText;
+
+        if (typeof window.marked !== 'undefined' && typeof window.marked.parse === 'function') {
+          try {
+            lastMessageText.innerHTML = window.marked.parse(updatedText);
+          } catch (e) {
+            lastMessageText.innerHTML = updatedText.replace(/\n/g, '<br>');
+          }
+        } else {
+          lastMessageText.innerHTML = updatedText.replace(/\n/g, '<br>');
         }
+
+        scrollToBottom();
       });
 
       socket.on('bot_typing', showTypingIndicator);
@@ -351,6 +370,10 @@
 
     const messageDiv = document.createElement('div');
     messageDiv.className = 'testpan-message testpan-bot-message';
+    // Track the raw (pre-markdown) text on the element itself so streamed
+    // 'bot_chunk' events have a reliable place to accumulate into and
+    // re-render from, even when this message starts out empty (streaming placeholder).
+    messageDiv.dataset.rawText = text || '';
 
     // The PNG is transparent, so no opaque avatar wrapper is needed.
     const avatarDiv = document.createElement('div');
