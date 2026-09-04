@@ -2,24 +2,38 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, user-scalable=no"
+    >
+
     <title>Chat Widget</title>
+
     <style>
         /* Ensure the widget container fills the iframe */
-        body, html {
+        html,
+        body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden; /* Hide scrollbars from the body */
-            background-color: transparent; /* Ensure no white background from the iframe body */
+            overflow: hidden;
+            background-color: transparent;
         }
     </style>
 </head>
+
 <body>
-    <!-- The loader will inject Socket.IO, CSS, and the widget script -->
+
+    <!-- Socket.IO -->
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <!-- Markdown renderer -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Widget loader -->
     <script src="/widgetLoader.js"></script>
+
 </body>
 </html>
