@@ -6,12 +6,20 @@
  * This is the only script that needs to be embedded on a live website.
  */
 (function() {
-  // Use the same origin as the server serving this script.
-  const serverUrl = new URL(document.currentScript.src).origin;
+  // Find this script element to determine the server URL and any query parameters.
+  const thisScript = document.currentScript;
+  if (!thisScript) {
+    console.error("Testpan Chat Widget: Could not find the loader script tag.");
+    return;
+  }
+
+  const scriptUrl = new URL(thisScript.src);
+  const serverUrl = scriptUrl.origin;
+  const siteParam = scriptUrl.searchParams.get('site');
 
   const assets = {
     socketio: 'https://cdn.socket.io/4.7.2/socket.io.min.js',
-    css: `${serverUrl}/style.css`,
+    css: `${serverUrl}/style.css?v=1.0`, // Add versioning to prevent caching issues
     widget: `${serverUrl}/chatWidget.js`
   };
 
@@ -42,7 +50,15 @@
     document.head.appendChild(link);
   }
 
+  // Create a global configuration object for the main widget script to use.
+  // This is more reliable than having the widget script try to find its own URL.
+  window.TESTPAN_CHAT_CONFIG = {
+    serverUrl: serverUrl,
+    site: siteParam || window.location.hostname
+  };
+
   // Load assets in the correct order.
   loadCss(assets.css);
-  loadScript(assets.socketio).then(() => loadScript(assets.widget));
+  // Load Socket.IO first, then the main widget script.
+  loadScript(assets.socketio).then(() => loadScript(assets.widget)).catch(console.error);
 })();

@@ -16,8 +16,13 @@
   };
 
   function resolveSite() {
-    const suppliedSite = window.TESTPAN_CHAT_SITE || new URLSearchParams(window.location.search).get('site') || window.location.hostname;
+    // Read the site parameter directly from the config object set by the loader.
+    const suppliedSite = (window.TESTPAN_CHAT_CONFIG && window.TESTPAN_CHAT_CONFIG.site)
+      ? window.TESTPAN_CHAT_CONFIG.site
+      : window.location.hostname;
+
     const normalized = String(suppliedSite).toLowerCase().replace(/[^a-z0-9]/g, '');
+
     const key = SITE_ALIASES[normalized]
       || (window.location.hostname.includes('manpowerx') ? 'manpower' : window.location.hostname.includes('bookmytestcenter') ? 'bmtc' : 'testpan');
     return SITE_PROFILES[key];
@@ -26,8 +31,11 @@
   const ACTIVE_SITE = resolveSite();
 
   // Widget configuration - Testpan brand colors
+  const serverUrl = (window.TESTPAN_CHAT_CONFIG && window.TESTPAN_CHAT_CONFIG.serverUrl)
+    ? window.TESTPAN_CHAT_CONFIG.serverUrl
+    : window.location.origin;
   const CONFIG = {
-    serverUrl: window.location.origin,
+    serverUrl: serverUrl,
     primaryColor: '#0052A3',      // Testpan corporate blue from logo
     accentColor: '#FF9500',        // Testpan orange accent from logo
     widgetTitle: `${ACTIVE_SITE.name} Support`,
