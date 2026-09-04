@@ -5,7 +5,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import mongoose from 'mongoose';
-import { processMessage, clearSession } from './handlers/webHandler.js';
+import { processMessage, clearSession, updateSession } from './handlers/webHandler.js';
 import Lead from './handlers/Lead.js';
 
 const __filename = fileURLToPath(import.meta.url);

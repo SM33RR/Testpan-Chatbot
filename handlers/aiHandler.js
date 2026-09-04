@@ -209,7 +209,15 @@ function getGeminiModel() {
     const genAI = new GoogleGenerativeAI(apiKey);
     geminiModel = genAI.getGenerativeModel({ 
       model: 'gemini-3.6-flash',
-      systemInstruction: SYSTEM_INSTRUCTION
+      systemInstruction: SYSTEM_INSTRUCTION,
+      // gemini-3.6-flash defaults to "medium" thinking, which adds real latency
+      // before the first streamed chunk. This bot answers grounded FAQ-style
+      // questions from a fixed knowledge base, not multi-step reasoning tasks,
+      // so a low thinking level is enough and noticeably faster.
+      // If it still feels slow, try 'minimal'.
+      generationConfig: {
+        thinkingConfig: { thinkingLevel: 'low' }
+      }
     });
     return geminiModel;
   } catch (error) {

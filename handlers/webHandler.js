@@ -155,7 +155,13 @@ export async function processMessage(sessionId, messageBody, currentSite = "test
         }
       }
       // Fallback if AI is disabled or fails, but still answer the question
-      return getFallbackResponse(body, site);
+      return {
+        text: getFallbackResponse(body, site),
+        buttons: [
+          { label: "⬅️ Back", value: "0" },
+          { label: "🏠 Main Menu", value: "menu" }
+        ]
+      };
     }
 
     if (session.state === 'LEAD_CAPTURE') {
