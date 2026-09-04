@@ -298,22 +298,22 @@ Source: Testpan India Corporate Database`;
 
     const contextualQuery = `[ACTIVE SITE]\nKey: ${siteProfile.key}\nBrand: ${siteProfile.name}\nPrimary context: ${siteProfile.primaryContext}\nPriority domains: ${siteProfile.domains.join(', ')}\n\n[KNOWLEDGE BASE CONTEXT]\n${relevantContext}\n\n[USER QUERY]\n${query}\n\n[NORMALIZED INTENT WORDING]\n${normalizedQuery}`;
 
-    // Use generateContentStream for real-time response streaming
-    const result = await model.generateContentStream(contextualQuery);
+    const result = await model.generateContent(contextualQuery);
+    const response = await result.response;
+    const text = response.text();
 
-    // The server will iterate over this async generator
     return {
       success: true,
-      stream: result.stream,
-      source: 'ai'
+      response: text.trim(),
+      source: 'ai',
+      contextLength: relevantContext.length
     };
 
   } catch (error) {
     console.error('AI processing error:', error);
     return {
       success: false,
-      // Provide a structured error response
-      response: `I'm having trouble connecting to my AI services right now. Please try again in a moment or select an option from the menu.`,
+      error: error.message,
       source: 'ai'
     };
   }

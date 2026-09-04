@@ -261,19 +261,6 @@
         }
       });
 
-      // Listen for streamed chunks of an AI response
-      socket.on('bot_chunk', (data) => {
-        const container = document.getElementById('testpan-messages-container');
-        if (!container) return;
-
-        // Find the last bot message's text element
-        const lastMessage = container.querySelector('.testpan-bot-message:last-child .testpan-message-text');
-        if (lastMessage && data.chunk) {
-          // Append the chunk and re-render markdown
-          lastMessage.innerHTML = window.marked.parse(lastMessage.textContent + data.chunk);
-        }
-      });
-
       socket.on('bot_typing', showTypingIndicator);
 
       socket.on('disconnect', () => {
