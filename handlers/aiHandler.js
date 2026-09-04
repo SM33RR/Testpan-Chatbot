@@ -12,6 +12,7 @@ let geminiModel = null;
 // Load and parse knowledge base
 const knowledgeBasePath = path.join(__dirname, '..', 'knowledgeBase.json');
 let contextText = '';
+let searchIndex = new Map();
 let knowledgeBasePages = [];
 
 /**
@@ -21,6 +22,27 @@ function formatContextFromPages(pages) {
   return pages
     .map(page => `Title: ${page.title}\nURL: ${page.url}\nContent:\n${page.content}`)
     .join('\n\n---\n\n');
+}
+
+/**
+ * Builds an in-memory inverted index for fast keyword-based document retrieval.
+ * This runs once at startup to avoid expensive searches on every query.
+ * @param {Array<Object>} pages - The array of knowledge base page objects.
+ */
+function buildSearchIndex(pages) {
+  console.log('Building in-memory search index...');
+  const index = new Map();
+  pages.forEach((page, pageIndex) => {
+    // Create a text corpus for the page and get unique words (3+ chars).
+    const content = `${page.title} ${page.content}`.toLowerCase();
+    const words = new Set(content.match(/\b\w{3,}\b/g) || []);
+    words.forEach(word => {
+      if (!index.has(word)) index.set(word, []);
+      index.get(word).push(pageIndex);
+    });
+  });
+  console.log(`   ✓ Search index built with ${index.size} unique terms.`);
+  return index;
 }
 
 /**
@@ -70,66 +92,46 @@ function expandQueryWithSynonyms(query) {
 }
 
 /**
- * Search knowledge base for relevant context snippets
- * Uses keyword matching with synonym expansion and proximity scoring
+ * Efficiently search the knowledge base using the pre-built index.
  */
 function searchRelevantContext(query, pages, maxSnippets = 3, currentSite = 'testpan') {
-  // Expand query with synonyms for better matching
   const expandedTerms = expandQueryWithSynonyms(query);
-  const scored = [];
+  const pageScores = new Map();
   const isBmtcQuery = /\bbmtc\b|book\s*my\s*test\s*cent(?:er|re)|booking\s+portal|test\s*cent(?:er|re)\s+booking/i.test(query);
   const siteProfile = getSiteProfile(currentSite);
 
-  pages.forEach((page) => {
-    let score = 0;
-    const content = (page.content || '').toLowerCase();
-    const sourceDomain = (page.source_domain || '').toLowerCase();
-    
-    // Score based on keyword matches with expanded terms
-    expandedTerms.forEach(word => {
-      if (word.length > 2) {
-        const regex = new RegExp(`\\b${word}`, 'g');
-        const matches = content.match(regex) || [];
-        score += matches.length * 10;
-      }
+  // Use the index to find matching pages and score them.
+  expandedTerms.forEach(term => {
+    const matchingPages = searchIndex.get(term) || [];
+    matchingPages.forEach(pageIndex => {
+      pageScores.set(pageIndex, (pageScores.get(pageIndex) || 0) + 10);
     });
-
-    // Boost score for relevant source domains
-    if (query.toLowerCase().includes('manpower') && page.source_domain === 'manpowerx.co.in') {
-      score += 50; // Prioritize manpowerx.co.in for manpower queries
-    }
-
-    // BMTC is the BookMyTestCenter product name. Prefer its pages even where a
-    // page uses the full brand name rather than the abbreviation.
-    if (isBmtcQuery && /(^|\.)bookmytestcenter\.com$/.test(sourceDomain)) {
-      score += 80;
-    }
-
-    if (siteProfile.domains.some(domain => sourceDomain === domain || sourceDomain.endsWith(`.${domain}`))) {
-      score += 60;
-    }
-    
-    // Boost score for leadership-related queries
-    if ((query.toLowerCase().includes('leader') || query.toLowerCase().includes('ceo') || query.toLowerCase().includes('founder')) 
-        && (content.includes('rajesh') || content.includes('setia') || content.includes('founder'))) {
-      score += 40;
-    }
-
-    if (score > 0) {
-      scored.push({
-        url: page.url,
-        title: page.title,
-        content: page.content,
-        score
-      });
-    }
   });
 
-  // Return top matches sorted by score
-  return scored
-    .sort((a, b) => b.score - a.score)
+  // Apply domain-specific and content-specific boosts to the scores.
+  for (const [pageIndex, score] of pageScores.entries()) {
+    const page = pages[pageIndex];
+    let newScore = score;
+    const sourceDomain = (page.source_domain || '').toLowerCase();
+
+    if (query.toLowerCase().includes('manpower') && sourceDomain === 'manpowerx.co.in') newScore += 50;
+    if (isBmtcQuery && /(^|\.)bookmytestcenter\.com$/.test(sourceDomain)) newScore += 80;
+    if (siteProfile.domains.some(domain => sourceDomain === domain || sourceDomain.endsWith(`.${domain}`))) newScore += 60;
+    if ((query.toLowerCase().includes('leader') || query.toLowerCase().includes('ceo') || query.toLowerCase().includes('founder')) && (page.content.toLowerCase().includes('rajesh') || page.content.toLowerCase().includes('setia'))) newScore += 40;
+
+    pageScores.set(pageIndex, newScore);
+  }
+
+  // Get the top N scoring page indices.
+  const topPageIndices = [...pageScores.entries()]
+    .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
     .slice(0, maxSnippets)
-    .map(p => `Source: ${p.title} (${p.url})\n${p.content.slice(0, 800)}...`)
+    .map(([pageIndex]) => pageIndex);
+
+  // Format the final context string from the top pages.
+  return topPageIndices
+    .map(index => pages[index])
+    .map(p => `Source: ${p.title} (${p.url})\n${p.content.slice(0, 1500)}...`)
     .join('\n\n---\n\n');
 }
 
@@ -151,6 +153,7 @@ try {
   if (Array.isArray(parsedKb)) {
     knowledgeBasePages = parsedKb;
     contextText = formatContextFromPages(parsedKb);
+    searchIndex = buildSearchIndex(knowledgeBasePages);
   } else {
     knowledgeBasePages = Object.entries(parsedKb).map(([key, value]) => ({
       url: value.url || '',
@@ -159,6 +162,7 @@ try {
       source_domain: new URL(value.url || 'https://testpanindia.com').hostname
     }));
     contextText = formatContextFromPages(knowledgeBasePages);
+    searchIndex = buildSearchIndex(knowledgeBasePages);
   }
   
   console.log(`Knowledge base loaded: ${knowledgeBasePages.length} pages indexed`);
