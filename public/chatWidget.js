@@ -269,10 +269,9 @@
         // Find the last bot message's text element
         const lastMessageText = container.querySelector('.testpan-bot-message:last-child .testpan-message-text');
         if (lastMessageText && data.chunk) {
-          // Append the new chunk to the existing text content
-          const currentText = lastMessageText.textContent || '';
-          // Re-render the entire message with the new chunk included
-          lastMessageText.innerHTML = window.marked.parse(currentText + data.chunk);
+          // More efficient: just append the new chunk. The final HTML is already structured.
+          // The 'marked' library will have already created the paragraph tags.
+          lastMessageText.lastChild.textContent += data.chunk;
         }
       });
 

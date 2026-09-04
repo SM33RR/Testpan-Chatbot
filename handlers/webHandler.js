@@ -16,7 +16,7 @@ function getSession(sessionId) {
   return sessions.get(sessionId);
 }
 
-function updateSession(sessionId, data) {
+export function updateSession(sessionId, data) {
   const session = getSession(sessionId);
   sessions.set(sessionId, { ...session, ...data });
   return getSession(sessionId);
