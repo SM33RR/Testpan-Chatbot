@@ -25,7 +25,10 @@
 </head>
 
 <body>
-    <!-- This single script now controls the entire loading and initialization process -->
+    <!-- Reverting to a direct, sequential script loading model to ensure stability -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="/style.css">
     <script src="/chatWidget.js"></script>
 
 </body>

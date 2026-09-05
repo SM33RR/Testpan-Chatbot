@@ -1,4 +1,10 @@
 (function() {
+  /**
+ * Testpan India Chatbot Widget
+ * Standalone client script that dynamically injects a floating chat widget
+ */
+
+
   const SITE_ALIASES = {
     testpan: 'testpan',
     testpanindia: 'testpan',
@@ -12,7 +18,6 @@
     mpx: 'manpower'
   };
 
-  const SITE_PROFILES = {
 
     testpan: {
       key: 'testpan',
@@ -37,7 +42,6 @@
 
   };
 
-  function resolveSite() {
     // Read the site parameter directly from the config object set by the loader.
     // Get site parameter from the current window's URL (which is the iframe's URL)
     const urlParams = new URLSearchParams(window.location.search);
@@ -59,10 +63,7 @@
         window.location.hostname.includes('bookmytestcenter') ? 'bmtc' :
         'testpan'); // Default to testpan if nothing else matches
 
-    return SITE_PROFILES[key];
-  }
-
-  const ACTIVE_SITE = resolveSite();
+  const ACTIVE_SITE = SITE_PROFILES[key];
 
   // Determine serverUrl from the script's own origin.
   // This ensures the widget connects to the same server it was loaded from.
@@ -117,38 +118,7 @@
 
   };
 
-  /**
-   * Dynamically loads a script and returns a promise.
-   * @param {string} src - The source URL of the script.
-   * @returns {Promise<void>}
-   */
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) {
-        console.log(`Script already loaded: ${src}`);
-        resolve();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => {
-        console.log(`Successfully loaded script: ${src}`);
-        resolve();
-      };
-      script.onerror = () => {
-        const errorMsg = `Failed to load critical script: ${src}`;
-        console.error(errorMsg);
-        reject(new Error(errorMsg));
-      };
-      document.head.appendChild(script);
-    });
-  }
-
-  /**
-   * This is the primary initialization function. It is called only after
-   * all dependencies have been loaded by the bootstrap process.
-   */
-  function initializeWidget() {
+  function init() {
 
     console.log('chatWidget.js: init() called.');
     // Check if running inside an iframe.
@@ -1294,29 +1264,11 @@
 
   }
 
-  /**
-   * This is the new, robust entry point for the entire widget.
-   * It ensures all external libraries are loaded before attempting to run the widget logic.
-   */
-  function bootstrap() {
-    console.log('Bootstrapping Testpan Widget...');
-    loadScript('https://cdn.socket.io/4.7.2/socket.io.min.js')
-      .then(() => loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js'))
-      .then(() => {
-        console.log('All dependencies loaded. Initializing widget...');
-        initializeWidget();
-      })
-      .catch(error => {
-        console.error('FATAL: A critical dependency failed to load. Widget cannot start.', error);
-        document.body.innerHTML = '<div style="padding: 20px; text-align: center; font-family: sans-serif; color: #cc0000;">Chat widget failed to load. A critical script could not be retrieved.</div>';
-      });
-  }
-
   // Wait for the DOM to be ready before starting the bootstrap process.
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootstrap);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    bootstrap();
+    init();
   }
 
 })();
