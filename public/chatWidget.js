@@ -119,27 +119,28 @@
 
   };
 
+  /**
+   * Initializes the widget after ensuring all dependencies (Socket.IO, Marked.js) are loaded.
+   * This prevents race conditions where this script executes before its dependencies.
+   */
   function init() {
+    // Check if dependencies are ready. If not, wait and retry.
+    if (typeof io === 'undefined' || typeof window.marked === 'undefined') {
+      console.warn('Dependencies not ready, retrying in 50ms...');
+      setTimeout(init, 50);
+      return;
+    }
 
-    console.log('chatWidget.js: init() called.');
-    // Check if running inside an iframe.
+    console.log('Dependencies loaded. Initializing widget.');
+
     const isIframe = window.self !== window.top;
 
+    // Create the widget. If in an iframe, it will open immediately.
+    createWidget(isIframe);
 
-    if (isIframe) {
-
-      // Open immediately when running inside iframe.
-      createWidget(true);
-
-    } else {
-
-      // Normal floating widget mode.
-      createWidget(false);
-
-      if (CONFIG.autoOpen) {
-        setTimeout(toggleWidget, 1000);
-      }
-
+    // If not in an iframe and autoOpen is configured, open it after a delay.
+    if (!isIframe && CONFIG.autoOpen) {
+      setTimeout(toggleWidget, 1000);
     }
   }
 
@@ -551,10 +552,7 @@
       }
 
       console.log('chatWidget.js: initializeSocket() called.');
-
       console.log(`Initializing Socket.io connection to: ${CONFIG.serverUrl} for site: ${ACTIVE_SITE.key}`);
-
-
       socket = io(
         CONFIG.serverUrl,
         {
