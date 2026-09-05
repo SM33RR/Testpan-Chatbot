@@ -475,11 +475,8 @@
 
     // Iframe mode.
     if (isIframe && chatWindow) {
-
-      window.parent.postMessage(
-        'testpan-chat-close',
-        '*'
-      );
+      // The loader on the parent page handles closing.
+      window.parent.postMessage('testpan-chat-close', '*');
 
       return;
 
