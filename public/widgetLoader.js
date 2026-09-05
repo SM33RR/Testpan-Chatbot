@@ -52,7 +52,7 @@
       const script = document.createElement('script');
 
       script.src = src;
-      script.async = true;
+      // Removed script.async = true; to ensure synchronous, blocking load order.
 
       script.onload = () => resolve();
 

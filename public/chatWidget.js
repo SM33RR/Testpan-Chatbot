@@ -139,6 +139,7 @@
 
   function init() {
 
+    console.log('chatWidget.js: init() called.');
     // Check if running inside an iframe.
     const isIframe = window.self !== window.top;
 
@@ -164,6 +165,7 @@
 
   function createWidget(isIframe = false) {
 
+    console.log('chatWidget.js: createWidget() called. isIframe:', isIframe);
     // Create main container.
     const widgetContainer = document.createElement('div');
 
@@ -435,6 +437,7 @@
     );
 
 
+    console.log('chatWidget.js: setupEventListeners() called.');
     /*
      * Initialize socket after the widget has been added
      * to the DOM.
@@ -585,6 +588,7 @@
 
   function initializeSocket() {
 
+    console.log('chatWidget.js: initializeSocket() called.');
     try {
 
       if (typeof io === 'undefined') {
@@ -592,7 +596,7 @@
         console.error(
           'Socket.io client not loaded'
         );
-
+        // This error should now be prevented by the widgetLoader.js fix.
 
         addSystemMessage(
           'Chat service unavailable - Socket.io not loaded. Please refresh the page.'
