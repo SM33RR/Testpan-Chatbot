@@ -40,6 +40,7 @@
   const assets = {
     socketio: 'https://cdn.socket.io/4.7.2/socket.io.min.js',
     css: `${serverUrl}/style.css?${cacheBuster}`,
+    marked: 'https://cdn.jsdelivr.net/npm/marked/marked.min.js',
     widget: `${serverUrl}/chatWidget.js?${cacheBuster}`,
   };
 
@@ -90,19 +91,12 @@
   // Load CSS.
   loadCss(assets.css);
 
-  /*
-   * Load Socket.IO only if it has not already been loaded.
-   */
-  if (typeof io === 'undefined') {
-    loadScript(assets.socketio)
-      .then(() => loadScript(assets.widget))
-      .catch(error => {
-        console.error('Testpan Chat Widget loading error:', error);
-      });
-  } else {
-    loadScript(assets.widget)
-      .catch(error => {
-        console.error('Testpan Chat Widget loading error:', error);
-      });
-  }
+  // Chain the script loading to guarantee order:
+  // 1. Load Socket.IO
+  // 2. Then load Marked.js
+  // 3. Finally, load the main widget script.
+  loadScript(assets.socketio)
+    .then(() => loadScript(assets.marked))
+    .then(() => loadScript(assets.widget))
+    .catch(error => console.error('Testpan Chat Widget failed to load a critical script:', error));
 })();
