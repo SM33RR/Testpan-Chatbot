@@ -3,7 +3,7 @@
  * Standalone client script that dynamically injects a floating chat widget
  */
 
-(function() {
+window.TestpanWidget = (function() {
 
   const SITE_ALIASES = {
     testpan: 'testpan',
@@ -1285,26 +1285,10 @@
   }
 
 
-  // Initialize when DOM is ready.
-  if (
-    document.readyState === 'loading'
-  ) {
-
-    document.addEventListener(
-      'DOMContentLoaded',
-      init
-    );
-
-  } else {
-
-    init();
-
-  }
-
-
-  // Expose functions globally.
-  window.toggleTestpanWidget =
-    toggleWidget;
-
+  // Expose the public API for the loader to use.
+  return {
+    init: init,
+    toggle: toggleWidget
+  };
 
 })();

@@ -91,12 +91,22 @@
   // Load CSS.
   loadCss(assets.css);
 
-  // Chain the script loading to guarantee order:
-  // 1. Load Socket.IO
-  // 2. Then load Marked.js
-  // 3. Finally, load the main widget script.
+  /**
+   * This is the new, robust entry point.
+   * It ensures all external libraries are loaded before attempting to run the widget logic.
+   */
   loadScript(assets.socketio)
-    .then(() => loadScript(assets.marked))
-    .then(() => loadScript(assets.widget))
-    .catch(error => console.error('Testpan Chat Widget failed to load a critical script:', error));
+    .then(() => {
+      console.log('Socket.IO loaded.');
+      return loadScript(assets.marked);
+    })
+    .then(() => {
+      console.log('Marked.js loaded.');
+      return loadScript(assets.widget);
+    })
+    .then(() => {
+      console.log('ChatWidget.js loaded. Initializing...');
+      window.TestpanWidget.init(); // Explicitly start the widget
+    })
+    .catch(error => console.error('FATAL: Testpan Chat Widget failed to load a critical script:', error));
 })();
