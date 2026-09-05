@@ -137,29 +137,55 @@
   };
 
 
-  function init() {
+  /**
+   * Dynamically loads a script and returns a promise.
+   * @param {string} src - The source URL of the script.
+   * @returns {Promise<void>}
+   */
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+      document.head.appendChild(script);
+    });
+  }
 
-    console.log('chatWidget.js: init() called.');
-    // Check if running inside an iframe.
-    const isIframe = window.self !== window.top;
+  /**
+   * Main asynchronous function to run the widget.
+   * This ensures dependencies are loaded before the widget is created.
+   */
+  async function run() {
+    console.log('Testpan Widget: Starting initialization...');
+    try {
+      // Ensure dependencies are loaded in order.
+      await loadScript('https://cdn.socket.io/4.7.2/socket.io.min.js');
+      console.log('Testpan Widget: Socket.IO loaded.');
 
+      await loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');
+      console.log('Testpan Widget: Marked.js loaded.');
 
-    if (isIframe) {
+      // Now that dependencies are ready, create the widget.
+      const isIframe = window.self !== window.top;
+      createWidget(isIframe);
 
-      // Open immediately when running inside iframe.
-      createWidget(true);
-
-    } else {
-
-      // Normal floating widget mode.
-      createWidget(false);
-
-      if (CONFIG.autoOpen) {
+      if (!isIframe && CONFIG.autoOpen) {
         setTimeout(toggleWidget, 1000);
       }
+      console.log('Testpan Widget: Initialization complete.');
 
+    } catch (error) {
+      console.error('Testpan Widget: A critical dependency failed to load. Widget cannot start.', error);
+      // Optionally, display an error message to the user in the host page.
+      const errorDiv = document.createElement('div');
+      errorDiv.innerHTML = 'Chat widget failed to load.';
+      document.body.appendChild(errorDiv);
     }
-
   }
 
 
@@ -236,42 +262,10 @@
 
           <img
             id="testpan-logo-img"
-            src="${ACTIVE_SITE.logo}"
+            src="${serverUrl}${ACTIVE_SITE.logo}"
             alt="${ACTIVE_SITE.name} Logo"
-            style="display: none;"
-            onerror="
-              this.style.display='none';
-              this.nextElementSibling.style.display='block';
-            "
-            onload="
-              this.nextElementSibling.style.display='none';
-              this.style.display='block';
-            "
+            style="display: block;"
           />
-
-          <svg
-            id="testpan-logo-svg"
-            style="display: none;"
-            width="32"
-            height="32"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-
-            <circle
-              cx="16"
-              cy="16"
-              r="16"
-              fill="#0052A3"
-            />
-
-            <path
-              d="M16 8C11.58 8 8 11.58 8 16C8 20.42 11.58 24 16 24C20.42 24 24 20.42 24 16C24 11.58 20.42 8 16 8ZM17 19H15V17H17V19ZM17 15H15V11H17V15Z"
-              fill="white"
-            />
-
-          </svg>
 
         </div>
 
@@ -437,15 +431,6 @@
     );
 
 
-    console.log('chatWidget.js: setupEventListeners() called.');
-    /*
-     * Initialize socket after the widget has been added
-     * to the DOM.
-     */
-    if (isIframe) {
-      initializeSocket();
-    }
-
   }
 
 
@@ -593,10 +578,7 @@
 
       if (typeof io === 'undefined') {
 
-        console.error(
-          'Socket.io client not loaded'
-        );
-        // This error should now be prevented by the widgetLoader.js fix.
+        console.error('Socket.io client not loaded. This should be prevented by the loader.');
 
         addSystemMessage(
           'Chat service unavailable - Socket.io not loaded. Please refresh the page.'
@@ -606,17 +588,7 @@
 
       }
 
-
-      console.log(
-        'Initializing Socket.io connection to:',
-        CONFIG.serverUrl
-      );
-
-
-      console.log(
-        'Active site:',
-        ACTIVE_SITE.key
-      );
+      console.log(`Initializing Socket.io connection to: ${CONFIG.serverUrl} for site: ${ACTIVE_SITE.key}`);
 
 
       socket = io(
@@ -1331,30 +1303,8 @@
   }
 
 
-  // Initialize when DOM is ready.
-  if (
-    document.readyState === 'loading'
-  ) {
-
-    document.addEventListener(
-      'DOMContentLoaded',
-      init
-    );
-
-  } else {
-
-    init();
-
-  }
-
-
-  // Expose functions globally.
-  window.toggleTestpanWidget =
-    toggleWidget;
-
-
-  window.getTestpanInput =
-    getInput;
+  // Run the main initialization function.
+  run();
 
 
 })();

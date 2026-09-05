@@ -79,7 +79,7 @@
    * Create a global configuration object for chatWidget.js.
    *
    * If site=bmtc was passed to widget.html, it will now correctly
-   * reach chatWidget.js.
+   * reach chatWidget.js via this config object.
    */
   window.TESTPAN_CHAT_CONFIG = {
     serverUrl: serverUrl,
@@ -91,12 +91,8 @@
   // Load CSS.
   loadCss(assets.css);
 
-  // Chain the script loading to guarantee order:
-  // 1. Load Socket.IO
-  // 2. Then load Marked.js
-  // 3. Finally, load the main widget script.
-  loadScript(assets.socketio)
-    .then(() => loadScript(assets.marked))
-    .then(() => loadScript(assets.widget))
-    .catch(error => console.error('Testpan Chat Widget failed to load a critical script:', error));
+  // Load the main widget script. It will handle its own dependencies.
+  loadScript(assets.widget).catch(error => 
+    console.error('Testpan Chat Widget failed to load:', error)
+  );
 })();
