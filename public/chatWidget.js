@@ -39,41 +39,39 @@
 
   function resolveSite() {
     // Read the site parameter directly from the config object set by the loader.
-    const suppliedSite =
-      (window.TESTPAN_CHAT_CONFIG &&
-       window.TESTPAN_CHAT_CONFIG.site)
-        ? window.TESTPAN_CHAT_CONFIG.site
-        : window.location.hostname;
+    // Get site parameter from the current window's URL (which is the iframe's URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    let suppliedSite = urlParams.get('site');
 
+    // Fallback to hostname if no 'site' parameter is explicitly provided
+    if (!suppliedSite) {
+      suppliedSite = window.location.hostname;
+    }
+    
     const normalized =
       String(suppliedSite)
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '');
 
     const key =
-      SITE_ALIASES[normalized] ||
-
-      (
-        window.location.hostname.includes('manpowerx')
-          ? 'manpower'
-
-          : window.location.hostname.includes('bookmytestcenter')
-            ? 'bmtc'
-
-            : 'testpan'
-      );
+      SITE_ALIASES[normalized] || // Use alias if direct match
+      (window.location.hostname.includes('manpowerx') ? 'manpower' : // Check hostname for default
+        window.location.hostname.includes('bookmytestcenter') ? 'bmtc' :
+        'testpan'); // Default to testpan if nothing else matches
 
     return SITE_PROFILES[key];
   }
 
   const ACTIVE_SITE = resolveSite();
 
-
-  const serverUrl =
-    (window.TESTPAN_CHAT_CONFIG &&
-     window.TESTPAN_CHAT_CONFIG.serverUrl)
-      ? window.TESTPAN_CHAT_CONFIG.serverUrl
-      : window.location.origin;
+  // Determine serverUrl from the script's own origin.
+  // This ensures the widget connects to the same server it was loaded from.
+  let serverUrl = window.location.origin;
+  const currentScript = document.currentScript;
+  if (currentScript) {
+    const scriptUrl = new URL(currentScript.src);
+    serverUrl = scriptUrl.origin;
+  }
 
   const CONFIG = {
 
