@@ -533,20 +533,24 @@
 
   function initializeSocket() {
 
-    console.log('chatWidget.js: initializeSocket() called.');
     try {
 
       if (typeof io === 'undefined') {
 
-        console.error('Socket.io client not loaded. This should be prevented by the loader.');
-
-        addSystemMessage(
-          'Chat service unavailable - Socket.io not loaded. Please refresh the page.'
-        );
-
+        // Socket.io is not ready yet. Retry in a moment.
+        // This resolves the race condition where chatWidget.js executes before socket.io.js.
+        console.warn('Socket.io not ready, retrying in 100ms...');
+        setTimeout(initializeSocket, 100);
         return;
 
       }
+
+      // If a socket connection already exists, do nothing.
+      if (socket && socket.connected) {
+        return;
+      }
+
+      console.log('chatWidget.js: initializeSocket() called.');
 
       console.log(`Initializing Socket.io connection to: ${CONFIG.serverUrl} for site: ${ACTIVE_SITE.key}`);
 
