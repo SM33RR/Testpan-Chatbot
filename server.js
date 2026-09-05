@@ -87,8 +87,8 @@ io.on('connection', (socket) => {
       const response = await processMessage(socket.id, message, socket.data.currentSite);
       console.log(`[AI TIMING] "${message}" — processMessage() resolved in ${Date.now() - handlerStart}ms`);
 
-      // Check if the response contains a stream to handle it differently
-      if (response.source === 'ai' && response.stream) {
+      // Check if the response is valid and contains a stream to handle it differently
+      if (response && response.source === 'ai' && response.stream) {
         const requestStart = response.timing?.requestStart ?? handlerStart;
         let firstChunkAt = null;
         let chunkCount = 0;

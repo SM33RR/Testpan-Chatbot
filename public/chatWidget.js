@@ -19,7 +19,7 @@
   };
 
 
-    testpan: {
+  const SITE_PROFILES = {    testpan: {
       key: 'testpan',
       name: 'Testpan India',
       logo: '/logo.png',
@@ -58,12 +58,13 @@
         .replace(/[^a-z0-9]/g, '');
 
     const key =
-      SITE_ALIASES[normalized] || // Use alias if direct match
-      (window.location.hostname.includes('manpowerx') ? 'manpower' : // Check hostname for default
-        window.location.hostname.includes('bookmytestcenter') ? 'bmtc' :
-        'testpan'); // Default to testpan if nothing else matches
+      SITE_ALIASES[normalized] ||
+      (window.location.hostname.includes('manpowerx') && 'manpower') ||
+      (window.location.hostname.includes('bookmytestcenter') && 'bmtc') ||
+      'testpan'; // Default to 'testpan' if no other condition is met
 
-  const ACTIVE_SITE = SITE_PROFILES[key];
+  // Ensure ACTIVE_SITE is never undefined by falling back to the default.
+  const ACTIVE_SITE = SITE_PROFILES[key] || SITE_PROFILES['testpan'];
 
   // Determine serverUrl from the script's own origin.
   // This ensures the widget connects to the same server it was loaded from.
