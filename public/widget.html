@@ -27,13 +27,45 @@
 <body>
     <!-- Dependencies for the chat widget -->
     <script>
-        // Dynamically add cache-busting query strings to the script and stylesheet
-        // to ensure the browser always loads the latest version during development.
         const cacheBuster = `v=${new Date().getTime()}`;
-        document.write(`<script src="https://cdn.socket.io/4.7.2/socket.io.min.js?${cacheBuster}"><\/script>`);
-        document.write(`<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js?${cacheBuster}"><\/script>`);
-        document.write(`<script src="/chatWidget.js?${cacheBuster}"><\/script>`);
-        document.write(`<link rel="stylesheet" href="/style.css?${cacheBuster}">`);
+
+        /**
+         * Sequentially loads an array of scripts, ensuring order of execution.
+         * This prevents race conditions where chatWidget.js runs before its dependencies.
+         */
+        function loadScriptsSequentially(scripts) {
+            return scripts.reduce((promise, scriptSrc) => {
+                return promise.then(() => {
+                    return new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = scriptSrc;
+                        script.onload = resolve;
+                        script.onerror = () => reject(new Error(`Failed to load script: ${scriptSrc}`));
+                        document.head.appendChild(script);
+                    });
+                });
+            }, Promise.resolve());
+        }
+
+        // Load the stylesheet immediately.
+        const style = document.createElement('link');
+        style.rel = 'stylesheet';
+        style.href = `/style.css?${cacheBuster}`;
+        document.head.appendChild(style);
+
+        // Define the scripts to be loaded in order.
+        const scriptsToLoad = [
+            `https://cdn.socket.io/4.7.2/socket.io.min.js?${cacheBuster}`,
+            `https://cdn.jsdelivr.net/npm/marked/marked.min.js?${cacheBuster}`,
+            `/chatWidget.js?${cacheBuster}`
+        ];
+
+        // Execute the loader.
+        loadScriptsSequentially(scriptsToLoad).catch(error => {
+            console.error("Critical error loading chat widget scripts:", error);
+            // Optionally, display an error message to the user in the iframe.
+            document.body.innerHTML = '<div style="text-align: center; padding: 20px; font-family: sans-serif; color: #888;">Chat could not be loaded.</div>';
+        });
     </script>
 
 

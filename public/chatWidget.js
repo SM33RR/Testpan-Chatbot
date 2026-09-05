@@ -124,21 +124,14 @@
    * This prevents race conditions where this script executes before its dependencies.
    */
   function init() {
-    // Check if dependencies are ready. If not, wait and retry.
-    if (typeof io === 'undefined' || typeof window.marked === 'undefined') {
-      console.warn('Dependencies not ready, retrying in 50ms...');
-      setTimeout(init, 50);
-      return;
-    }
-
-    console.log('Dependencies loaded. Initializing widget.');
+    console.log('chatWidget.js: init() called. Dependencies are pre-loaded.');
 
     const isIframe = window.self !== window.top;
 
     // Create the widget. If in an iframe, it will open immediately.
     createWidget(isIframe);
 
-    // If not in an iframe and autoOpen is configured, open it after a delay.
+    // In floating mode, auto-open if configured.
     if (!isIframe && CONFIG.autoOpen) {
       setTimeout(toggleWidget, 1000);
     }
@@ -534,24 +527,13 @@
 
   function initializeSocket() {
 
+    // If a socket connection already exists, do nothing.
+    if (socket && socket.connected) {
+      return;
+    }
+
+    console.log('chatWidget.js: Initializing Socket.io connection...');
     try {
-
-      if (typeof io === 'undefined') {
-
-        // Socket.io is not ready yet. Retry in a moment.
-        // This resolves the race condition where chatWidget.js executes before socket.io.js.
-        console.warn('Socket.io not ready, retrying in 100ms...');
-        setTimeout(initializeSocket, 100);
-        return;
-
-      }
-
-      // If a socket connection already exists, do nothing.
-      if (socket && socket.connected) {
-        return;
-      }
-
-      console.log('chatWidget.js: initializeSocket() called.');
       console.log(`Initializing Socket.io connection to: ${CONFIG.serverUrl} for site: ${ACTIVE_SITE.key}`);
       socket = io(
         CONFIG.serverUrl,
