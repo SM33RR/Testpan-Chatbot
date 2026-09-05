@@ -91,8 +91,12 @@
   // Load CSS.
   loadCss(assets.css);
 
-  // Load the main widget script. It will handle its own dependencies.
-  loadScript(assets.widget).catch(error => 
-    console.error('Testpan Chat Widget failed to load:', error)
-  );
+  // Chain the script loading to guarantee order:
+  // 1. Load Socket.IO
+  // 2. Then load Marked.js
+  // 3. Finally, load the main widget script.
+  loadScript(assets.socketio)
+    .then(() => loadScript(assets.marked))
+    .then(() => loadScript(assets.widget))
+    .catch(error => console.error('Testpan Chat Widget failed to load a critical script:', error));
 })();

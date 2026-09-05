@@ -137,54 +137,27 @@
   };
 
 
-  /**
-   * Dynamically loads a script and returns a promise.
-   * @param {string} src - The source URL of the script.
-   * @returns {Promise<void>}
-   */
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) {
-        resolve();
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
-      document.head.appendChild(script);
-    });
-  }
+  function init() {
 
-  /**
-   * Main asynchronous function to run the widget.
-   * This ensures dependencies are loaded before the widget is created.
-   */
-  async function run() {
-    console.log('Testpan Widget: Starting initialization...');
-    try {
-      // Ensure dependencies are loaded in order.
-      await loadScript('https://cdn.socket.io/4.7.2/socket.io.min.js');
-      console.log('Testpan Widget: Socket.IO loaded.');
+    console.log('chatWidget.js: init() called.');
+    // Check if running inside an iframe.
+    const isIframe = window.self !== window.top;
 
-      await loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');
-      console.log('Testpan Widget: Marked.js loaded.');
 
-      // Now that dependencies are ready, create the widget.
-      const isIframe = window.self !== window.top;
-      createWidget(isIframe);
+    if (isIframe) {
 
-      if (!isIframe && CONFIG.autoOpen) {
+      // Open immediately when running inside iframe.
+      createWidget(true);
+
+    } else {
+
+      // Normal floating widget mode.
+      createWidget(false);
+
+      if (CONFIG.autoOpen) {
         setTimeout(toggleWidget, 1000);
       }
-      console.log('Testpan Widget: Initialization complete.');
 
-    } catch (error) {
-      console.error('Testpan Widget: A critical dependency failed to load. Widget cannot start.', error);
-      // Optionally, display an error message to the user in the host page.
-      const errorDiv = document.createElement('div');
-      errorDiv.innerHTML = 'Chat widget failed to load.';
-      document.body.appendChild(errorDiv);
     }
   }
 
@@ -430,6 +403,15 @@
       setupEventListeners
     );
 
+
+    console.log('chatWidget.js: setupEventListeners() called.');
+    /*
+     * Initialize socket after the widget has been added
+     * to the DOM.
+     */
+    if (isIframe) {
+      initializeSocket();
+    }
 
   }
 
@@ -1303,8 +1285,26 @@
   }
 
 
-  // Run the main initialization function.
-  run();
+  // Initialize when DOM is ready.
+  if (
+    document.readyState === 'loading'
+  ) {
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      init
+    );
+
+  } else {
+
+    init();
+
+  }
+
+
+  // Expose functions globally.
+  window.toggleTestpanWidget =
+    toggleWidget;
 
 
 })();
