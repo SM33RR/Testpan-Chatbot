@@ -403,6 +403,18 @@
 
       widgetContainer.style.height = '100%';
 
+      // style.css sets bottom/right insets on .testpan-widget-container for
+      // the floating-launcher mode. In iframe mode the container must fill
+      // the iframe exactly, or chatWindow (positioned absolute relative to
+      // this container) ends up shifted and clipped at the edges.
+      widgetContainer.style.top = '0';
+
+      widgetContainer.style.left = '0';
+
+      widgetContainer.style.bottom = '0';
+
+      widgetContainer.style.right = '0';
+
     }
 
 
