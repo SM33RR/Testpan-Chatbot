@@ -25,11 +25,17 @@
 </head>
 
 <body>
-    <!-- Reverting to a direct, sequential script loading model to ensure stability -->
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="/style.css">
-    <script src="/chatWidget.js"></script>
+    <!-- Dependencies for the chat widget -->
+    <script>
+        // Dynamically add cache-busting query strings to the script and stylesheet
+        // to ensure the browser always loads the latest version during development.
+        const cacheBuster = `v=${new Date().getTime()}`;
+        document.write(`<script src="https://cdn.socket.io/4.7.2/socket.io.min.js?${cacheBuster}"><\/script>`);
+        document.write(`<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js?${cacheBuster}"><\/script>`);
+        document.write(`<script src="/chatWidget.js?${cacheBuster}"><\/script>`);
+        document.write(`<link rel="stylesheet" href="/style.css?${cacheBuster}">`);
+    </script>
+
 
 </body>
 </html>

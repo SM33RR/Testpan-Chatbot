@@ -281,8 +281,18 @@
             document.getElementById('site-name').textContent = profile.name;
             document.title = `${profile.name} - Support`;
         })();
+
+        // Dynamically add cache-busting query strings to the script and stylesheet
+        // to ensure the browser always loads the latest version during development.
+        const cacheBuster = `v=${new Date().getTime()}`;
+        const chatWidgetScript = document.createElement('script');
+        chatWidgetScript.src = `/chatWidget.js?${cacheBuster}`;
+        document.body.appendChild(chatWidgetScript);
+
+        const styleSheet = document.createElement('link');
+        styleSheet.rel = 'stylesheet';
+        styleSheet.href = `/style.css?${cacheBuster}`;
+        document.head.appendChild(styleSheet);
     </script>
-    <script src="/chatWidget.js"></script>
-    <link rel="stylesheet" href="/style.css">
 </body>
 </html>
