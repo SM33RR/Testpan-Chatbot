@@ -1,10 +1,4 @@
-/**
- * Testpan India Chatbot Widget
- * Standalone client script that dynamically injects a floating chat widget
- */
-
-window.TestpanWidget = (function() {
-
+(function() {
   const SITE_ALIASES = {
     testpan: 'testpan',
     testpanindia: 'testpan',
@@ -17,7 +11,6 @@ window.TestpanWidget = (function() {
     manpowerx: 'manpower',
     mpx: 'manpower'
   };
-
 
   const SITE_PROFILES = {
 
@@ -44,9 +37,7 @@ window.TestpanWidget = (function() {
 
   };
 
-
   function resolveSite() {
-
     // Read the site parameter directly from the config object set by the loader.
     const suppliedSite =
       (window.TESTPAN_CHAT_CONFIG &&
@@ -54,12 +45,10 @@ window.TestpanWidget = (function() {
         ? window.TESTPAN_CHAT_CONFIG.site
         : window.location.hostname;
 
-
     const normalized =
       String(suppliedSite)
         .toLowerCase()
         .replace(/[^a-z0-9]/g, '');
-
 
     const key =
       SITE_ALIASES[normalized] ||
@@ -74,11 +63,8 @@ window.TestpanWidget = (function() {
             : 'testpan'
       );
 
-
     return SITE_PROFILES[key];
-
   }
-
 
   const ACTIVE_SITE = resolveSite();
 
@@ -88,7 +74,6 @@ window.TestpanWidget = (function() {
      window.TESTPAN_CHAT_CONFIG.serverUrl)
       ? window.TESTPAN_CHAT_CONFIG.serverUrl
       : window.location.origin;
-
 
   const CONFIG = {
 
@@ -108,7 +93,6 @@ window.TestpanWidget = (function() {
 
   };
 
-
   // Widget state
   let socket = null;
 
@@ -117,7 +101,6 @@ window.TestpanWidget = (function() {
   let messageHistory = [];
 
 
-  // Keep display labels separate from stable commands understood by the server.
   const QUICK_REPLY_COMMANDS = {
 
     '💻 Our Services': '1',
@@ -136,8 +119,38 @@ window.TestpanWidget = (function() {
 
   };
 
+  /**
+   * Dynamically loads a script and returns a promise.
+   * @param {string} src - The source URL of the script.
+   * @returns {Promise<void>}
+   */
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        console.log(`Script already loaded: ${src}`);
+        resolve();
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => {
+        console.log(`Successfully loaded script: ${src}`);
+        resolve();
+      };
+      script.onerror = () => {
+        const errorMsg = `Failed to load critical script: ${src}`;
+        console.error(errorMsg);
+        reject(new Error(errorMsg));
+      };
+      document.head.appendChild(script);
+    });
+  }
 
-  function init() {
+  /**
+   * This is the primary initialization function. It is called only after
+   * all dependencies have been loaded by the bootstrap process.
+   */
+  function initializeWidget() {
 
     console.log('chatWidget.js: init() called.');
     // Check if running inside an iframe.
@@ -160,7 +173,6 @@ window.TestpanWidget = (function() {
 
     }
   }
-
 
   function createWidget(isIframe = false) {
 
@@ -1284,11 +1296,29 @@ window.TestpanWidget = (function() {
 
   }
 
+  /**
+   * This is the new, robust entry point for the entire widget.
+   * It ensures all external libraries are loaded before attempting to run the widget logic.
+   */
+  function bootstrap() {
+    console.log('Bootstrapping Testpan Widget...');
+    loadScript('https://cdn.socket.io/4.7.2/socket.io.min.js')
+      .then(() => loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js'))
+      .then(() => {
+        console.log('All dependencies loaded. Initializing widget...');
+        initializeWidget();
+      })
+      .catch(error => {
+        console.error('FATAL: A critical dependency failed to load. Widget cannot start.', error);
+        document.body.innerHTML = '<div style="padding: 20px; text-align: center; font-family: sans-serif; color: #cc0000;">Chat widget failed to load. A critical script could not be retrieved.</div>';
+      });
+  }
 
-  // Expose the public API for the loader to use.
-  return {
-    init: init,
-    toggle: toggleWidget
-  };
+  // Wait for the DOM to be ready before starting the bootstrap process.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootstrap);
+  } else {
+    bootstrap();
+  }
 
 })();
