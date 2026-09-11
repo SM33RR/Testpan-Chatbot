@@ -133,8 +133,7 @@
   function init() {
     console.log('chatWidget.js: init() called. Dependencies are pre-loaded.');
 
-    // Create the widget. If in an iframe, it will open immediately.
-    createWidget(isIframe);
+    createWidget(window.self !== window.top);
 
     // rehydrateChat();
 
