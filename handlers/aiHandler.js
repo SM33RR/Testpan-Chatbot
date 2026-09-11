@@ -1026,7 +1026,7 @@ export function shouldUseAI(query) {
     return false;
   }
   
-  const specificPatterns = /^(\d+\.\d+|\d)$/i;
+  const specificPatterns = /^(\d+\.\d+)$/i; // Only match decimals, not single digits
   if (specificPatterns.test(lowerQuery)) {
     return false;
   }
