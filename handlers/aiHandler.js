@@ -1026,7 +1026,7 @@ export function shouldUseAI(query) {
     return false;
   }
   
-  const specificPatterns = /^(\d+\.\d+)$/i; // Only match decimals, not single digits
+  const specificPatterns = /^(\d+\.\d+|\d)$/i;
   if (specificPatterns.test(lowerQuery)) {
     return false;
   }
@@ -1077,10 +1077,9 @@ export function getFallbackResponse(query, currentSite = 'testpan') {
   // checked the query's language at all. Now it branches on isHinglishQuery().
   if (lowerQuery.includes('contact') || lowerQuery.includes('phone') || lowerQuery.includes('email')) {
     return hinglish
-      ? 'Aap hamari team se +91 98101 47334 ya info@testpanindia.com par contact kar sakte hain.'
-      : 'You can reach our team at +91 98101 47334 or email info@testpanindia.com.';
+         ? 'Aap hamari team se [+91 98101 47334](tel:+919810147334) ya [info@testpanindia.com](mailto:info@testpanindia.com) par contact kar sakte hain.'
+      : 'You can reach our team at [+91 98101 47334](tel:+919810147334) or email [info@testpanindia.com](mailto:info@testpanindia.com).';
   }
-
   if (lowerQuery.includes('service') || lowerQuery.includes('offer')) {
     return 'We offer test center booking, center management tools, IT support, manpower services (ManpowerX), and exam support services.';
   }

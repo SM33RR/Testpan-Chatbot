@@ -274,8 +274,8 @@ export async function processMessage(
         text:
           "📲 **Customer Support**\n\n" +
           "You can reach our support team directly by:\n\n" +
-          "*   **Phone**: [+91 98101 47334](tel:+919810147334)\n" +
-          "*   **Email**: [info@testpanindia.com](mailto:info@testpanindia.com)",
+          "*   **Phone**: +91 98101 47334\n" +
+          "*   **Email**: info@testpanindia.com",
 
         buttons: [
           {
