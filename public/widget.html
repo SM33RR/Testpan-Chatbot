@@ -54,9 +54,24 @@
         document.head.appendChild(style);
 
         // Define the scripts to be loaded in order.
+        // NOTE: marked is pinned to an exact version (18.0.12), not the
+        // unpinned "latest" this used to load. That unpinned URL is what
+        // let marked's v13 breaking change (renderer.link's function
+        // signature) silently reach production with no warning — the code
+        // in chatWidget.js was written for the old API, and every markdown
+        // link in a static bot message started rendering as literal
+        // "undefined" text the moment marked's CDN "latest" crossed that
+        // version boundary, with no deploy on this project's end at all.
+        // Bump this version deliberately (and re-test link rendering)
+        // rather than letting it drift automatically. Also worth knowing:
+        // marked 18.0.0 had a disclosed critical DoS vulnerability
+        // (a 3-byte input could hang the browser tab via infinite
+        // recursion) — 18.0.12 is a later patch, but double check
+        // https://github.com/markedjs/marked/security/advisories before
+        // deploying if this version is ever bumped again.
         const scriptsToLoad = [
             `/socket.io/socket.io.js?${cacheBuster}`,
-            `https://cdn.jsdelivr.net/npm/marked/marked.min.js?${cacheBuster}`,
+            `https://cdn.jsdelivr.net/npm/marked@18.0.12/marked.min.js?${cacheBuster}`,
             `/chatWidget.js?${cacheBuster}`
         ];
 

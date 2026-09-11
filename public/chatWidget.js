@@ -98,6 +98,52 @@
 
   };
 
+  /**
+   * Returns a marked.js renderer that (a) always opens links in a new tab,
+   * and (b) works whether marked calls renderer.link with the OLD API
+   * (three positional args: href, title, text) or the NEW API (a single
+   * { href, title, text, tokens } object, standard since marked v13,
+   * released June 2024).
+   *
+   * BUG THIS FIXES: widget.html loads marked from
+   * `https://cdn.jsdelivr.net/npm/marked/marked.min.js` — UNPINNED, so it
+   * always serves whatever the current latest major version is (18.x as of
+   * this fix). This renderer was still written for the pre-v13 positional
+   * signature. Under the new API, calling it as `renderer.link({href,
+   * title, tokens})` meant the old code's `href` parameter actually
+   * received the whole token OBJECT (not a string), and `title`/`text`
+   * were always undefined — which is exactly why static messages (the FAQ
+   * menu, Customer Support) rendered the literal text "undefined" for
+   * every link, while AI-streamed responses (which used marked's own
+   * built-in default renderer, unaffected by this mismatch) displayed
+   * correctly but had no target="_blank" and so opened in the same frame.
+   * This one function now backs BOTH render paths, so both bugs are fixed
+   * consistently everywhere at once.
+   */
+  function createLinkOpeningRenderer() {
+    const renderer = new window.marked.Renderer();
+    renderer.link = function (hrefOrToken, maybeTitle, maybeText) {
+      let href, title, text;
+      if (hrefOrToken && typeof hrefOrToken === 'object') {
+        // marked v13+ single-object API
+        href = hrefOrToken.href;
+        title = hrefOrToken.title;
+        text = hrefOrToken.text;
+        if (!text && hrefOrToken.tokens && this.parser && typeof this.parser.parseInline === 'function') {
+          text = this.parser.parseInline(hrefOrToken.tokens);
+        }
+      } else {
+        // pre-v13 positional API
+        href = hrefOrToken;
+        title = maybeTitle;
+        text = maybeText;
+      }
+      text = text || href || '';
+      return `<a target="_blank" rel="noopener noreferrer" href="${href}" title="${title || ''}">${text}</a>`;
+    };
+    return renderer;
+  }
+
   // Widget state
   let socket = null;
 
@@ -675,7 +721,8 @@
 
               lastMessageText.innerHTML =
                 window.marked.parse(
-                  updatedText
+                  updatedText,
+                  { renderer: createLinkOpeningRenderer() }
                 );
 
             } catch (e) {
@@ -990,12 +1037,7 @@
       typeof window.marked.parse === 'function'
     ) {
 
-      const renderer = new window.marked.Renderer();
-      renderer.link = function (href, title, text) {
-        return `<a target="_blank" href="${href}" title="${
-          title || ''
-        }">${text}</a>`;
-      };
+      const renderer = createLinkOpeningRenderer();
 
       try {
 
