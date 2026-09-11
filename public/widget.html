@@ -31,18 +31,35 @@
 
         /**
          * Sequentially loads an array of scripts, ensuring order of execution.
-         * This prevents race conditions where chatWidget.js runs before its dependencies.
+         * This prevents race conditions where chatWidget.js runs before its
+         * dependencies. Each entry can be either a single URL string, or an
+         * array of URLs to try in order (first success wins) — used below
+         * for marked, so a single bad CDN URL degrades to a fallback instead
+         * of taking the whole widget down (see the outage this was added
+         * after: a version-pinned CDN URL for marked briefly failed to
+         * resolve while jsDelivr caught up with a very recent release).
          */
+        function loadOneScript(scriptSrc) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = scriptSrc;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error(`Failed to load script: ${scriptSrc}`));
+                document.head.appendChild(script);
+            });
+        }
+
         function loadScriptsSequentially(scripts) {
-            return scripts.reduce((promise, scriptSrc) => {
+            return scripts.reduce((promise, entry) => {
                 return promise.then(() => {
-                    return new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = scriptSrc;
-                        script.onload = resolve;
-                        script.onerror = () => reject(new Error(`Failed to load script: ${scriptSrc}`));
-                        document.head.appendChild(script);
-                    });
+                    const candidates = Array.isArray(entry) ? entry : [entry];
+                    return candidates.reduce((chain, url, i) => {
+                        return chain.catch(err => {
+                            if (i === 0) throw err; // first candidate, nothing to fall back from yet
+                            console.warn(`[widget] falling back after failed load: ${candidates[i - 1]} -> ${url}`);
+                            return loadOneScript(url);
+                        });
+                    }, loadOneScript(candidates[0]));
                 });
             }, Promise.resolve());
         }
@@ -54,24 +71,38 @@
         document.head.appendChild(style);
 
         // Define the scripts to be loaded in order.
-        // NOTE: marked is pinned to an exact version (18.0.12), not the
-        // unpinned "latest" this used to load. That unpinned URL is what
-        // let marked's v13 breaking change (renderer.link's function
-        // signature) silently reach production with no warning — the code
-        // in chatWidget.js was written for the old API, and every markdown
-        // link in a static bot message started rendering as literal
-        // "undefined" text the moment marked's CDN "latest" crossed that
-        // version boundary, with no deploy on this project's end at all.
-        // Bump this version deliberately (and re-test link rendering)
-        // rather than letting it drift automatically. Also worth knowing:
-        // marked 18.0.0 had a disclosed critical DoS vulnerability
-        // (a 3-byte input could hang the browser tab via infinite
-        // recursion) — 18.0.12 is a later patch, but double check
+        //
+        // marked is pinned to an exact version (18.0.12), not the unpinned
+        // "latest" this used to load. That unpinned URL is what let marked's
+        // v13 breaking change (renderer.link's function signature) silently
+        // reach production with no warning: the code in chatWidget.js was
+        // written for the old API, and every markdown link in a static bot
+        // message started rendering as literal "undefined" text the moment
+        // marked's CDN "latest" crossed that version boundary, with no
+        // deploy on this project's end at all. Bump this version
+        // deliberately (and re-test link rendering) rather than letting it
+        // drift automatically. Also worth knowing: marked 18.0.0 had a
+        // disclosed critical DoS vulnerability (a 3-byte input could hang
+        // the browser tab via infinite recursion) -- 18.0.12 is a later
+        // patch, but double check
         // https://github.com/markedjs/marked/security/advisories before
         // deploying if this version is ever bumped again.
+        //
+        // The path is also fixed: `marked.min.js` (the old bare filename)
+        // is no longer how marked's own docs say to load it from a CDN --
+        // every current example in marked's README, homepage, and its
+        // official extension packages uses `lib/marked.umd.js` instead.
+        // A same-origin fallback to the fully unpinned URL is included so
+        // that if this specific pinned path or version ever has a transient
+        // CDN resolution issue again, the widget degrades to "may have a
+        // different marked version than intended" rather than not loading
+        // at all.
         const scriptsToLoad = [
             `/socket.io/socket.io.js?${cacheBuster}`,
-            `https://cdn.jsdelivr.net/npm/marked@18.0.12/marked.min.js?${cacheBuster}`,
+            [
+                `https://cdn.jsdelivr.net/npm/marked@18.0.12/lib/marked.umd.js?${cacheBuster}`,
+                `https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js?${cacheBuster}`
+            ],
             `/chatWidget.js?${cacheBuster}`
         ];
 
