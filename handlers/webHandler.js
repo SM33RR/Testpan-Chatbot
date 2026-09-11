@@ -193,30 +193,46 @@ export async function processMessage(
     }
 
     if (lowerBody === "3") {
-      const response = {
-        text:
-          "ℹ️ **About Testpan India**\n\n" +
-          "Founded in 2016 by our CEO, **Mr. Rajesh Setia**, Testpan India is a premier provider of examination center management, IT infrastructure, and computer-based testing (CBT) solutions across India.",
+      let responseText;
+      let purpose;
 
-        buttons: [
-          {
-            label: "⬅️ Back",
-            value: "0"
-          },
-          {
-            label: "🏠 Main Menu",
-            value: "menu"
-          }
-        ]
-      };
+      switch (site) {
+        case 'manpower':
+          responseText =
+            "ℹ️ **About ManpowerX**\n\n" +
+            "ManpowerX is our specialized staffing service. We provide skilled and verified personnel—including invigilators, technical support, and administrative staff—to ensure examinations are conducted smoothly and securely across India.";
+          purpose = 'About ManpowerX';
+          break;
+
+        case 'bmtc':
+          responseText =
+            "ℹ️ **About BookMyTestCenter**\n\n" +
+            "BookMyTestCenter (BMTC) is our one-stop digital platform for booking and managing examination centers. It streamlines finding, verifying, and securing test centers for assessment bodies nationwide.";
+          purpose = 'About BookMyTestCenter';
+          break;
+
+        case 'testpan':
+        default:
+          responseText =
+            "ℹ️ **About Testpan India**\n\n" +
+            "Founded in 2016 by our CEO, **Mr. Rajesh Setia**, Testpan India is a premier provider of examination center management, IT infrastructure, and computer-based testing (CBT) solutions across India.";
+          purpose = 'About Testpan India';
+          break;
+      }
 
       return updateSessionAndReturn(
         socket.id,
         {
           state: 'LEAD_PROMPT',
-          purpose: 'About Testpan India'
+          purpose: purpose
         },
-        response
+        {
+          text: responseText,
+          buttons: [
+            { label: "⬅️ Back", value: "0" },
+            { label: "🏠 Main Menu", value: "menu" }
+          ]
+        }
       );
     }
 
@@ -278,17 +294,8 @@ export async function processMessage(
      * Lead capture flow
      */
     if (session.state === 'LEAD_PROMPT') {
-      if (shouldUseAI(body)) {
-        // Fall through to the AI handler.
-      }
-      else if (validateIndianPhoneNumber(body)) {
-        updateSession(socket.id, {
-          state: 'GREETING',
-          lead: {
-            ...session.lead,
-            phone: body
-          }
-        });
+      if (validateIndianPhoneNumber(body)) {
+        updateSession(socket.id, { state: 'GREETING', lead: { ...session.lead, phone: body } });
 
         const leadName = session.lead.name || 'there';
 
@@ -306,8 +313,10 @@ export async function processMessage(
             websiteVisited: siteProfile.name
           }
         };
-      }
-      else {
+      } else if (shouldUseAI(body)) {
+        // The user might ask a follow-up question instead of providing a name.
+        // Let it fall through to the main AI handler.
+      } else {
         const nameMatch = body.match(
           /(?:my\s+name\s+is|i'm|i\s+am)\s+([a-z\s]+)/i
         );
@@ -577,31 +586,37 @@ function getMainMenuResponse(
       break;
   }
 
+  const aboutButtonLabel = {
+    testpan: "ℹ️ About Testpan India",
+    bmtc: "ℹ️ About BookMyTestCenter",
+    manpower: "ℹ️ About ManpowerX",
+  }[site] || "ℹ️ About Us";
+
   return {
     text: headerText,
 
     buttons: [
       {
         label: "💻 Our Services",
-        value: "1"
+        value: "1",
       },
       {
         label: "🤝 Partner with us",
-        value: "2"
+        value: "2",
       },
       {
-        label: "ℹ️ About Testpan India",
-        value: "3"
+        label: aboutButtonLabel,
+        value: "3",
       },
       {
         label: "⁉️ FAQ",
-        value: "4"
+        value: "4",
       },
       {
         label: "📲 Customer Support",
-        value: "5"
-      }
-    ]
+        value: "5",
+      },
+    ],
   };
 }
 

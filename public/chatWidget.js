@@ -42,14 +42,19 @@
 
   };
 
+    const isIframe = window.self !== window.top;
+
     // Read the site parameter directly from the config object set by the loader.
     // Get site parameter from the current window's URL (which is the iframe's URL)
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(
+      isIframe ? window.location.search : window.parent.location.search
+    );
     let suppliedSite = urlParams.get('site');
 
     // Fallback to hostname if no 'site' parameter is explicitly provided
+    // In an iframe, this is the parent hostname. Otherwise, it's the current hostname.
     if (!suppliedSite) {
-      suppliedSite = window.location.hostname;
+      suppliedSite = isIframe ? new URL(document.referrer).hostname : window.location.hostname;
     }
     
     const normalized =
@@ -59,8 +64,8 @@
 
     const key =
       SITE_ALIASES[normalized] ||
-      (window.location.hostname.includes('manpowerx') && 'manpower') ||
-      (window.location.hostname.includes('bookmytestcenter') && 'bmtc') ||
+      (suppliedSite.includes('manpowerx') && 'manpower') ||
+      (suppliedSite.includes('bookmytestcenter') && 'bmtc') ||
       'testpan'; // Default to 'testpan' if no other condition is met
 
   // Ensure ACTIVE_SITE is never undefined by falling back to the default.
@@ -127,8 +132,6 @@
    */
   function init() {
     console.log('chatWidget.js: init() called. Dependencies are pre-loaded.');
-
-    const isIframe = window.self !== window.top;
 
     // Create the widget. If in an iframe, it will open immediately.
     createWidget(isIframe);
@@ -988,12 +991,16 @@
       typeof window.marked.parse === 'function'
     ) {
 
+      const renderer = new window.marked.Renderer();
+      renderer.link = function (href, title, text) {
+        return `<a target="_blank" href="${href}" title="${
+          title || ''
+        }">${text}</a>`;
+      };
+
       try {
 
-        textDiv.innerHTML =
-          window.marked.parse(
-            text || ''
-          );
+        textDiv.innerHTML = window.marked.parse(text || '', { renderer });
 
       } catch (e) {
 
