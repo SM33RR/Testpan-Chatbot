@@ -295,10 +295,21 @@ export async function processMessage(
      */
     if (session.state === 'LEAD_PROMPT') {
       if (validateIndianPhoneNumber(body)) {
-        updateSession(socket.id, { state: 'GREETING', lead: { ...session.lead, phone: body } });
+        updateSession(socket.id, {
+          state: 'GREETING',
+          lead: { ...session.lead,
+            phone: body
+          }
+        });
 
         const leadName = session.lead.name || 'there';
 
+        // This is the correct final step of lead capture, where we have the phone number.
+        // The purpose and website visited are attached to the lead data sent back to the client.
+        // The client-side JS will then emit a `save_user_lead` event with this data.
+        // The server's `socket.on('save_user_lead', ...)` listener handles the database save.
+        // This ensures that we only attempt to save a complete lead.
+        // The `leadData` property is a special key that the client looks for.
         return {
           text:
             `Thanks! Our team will reach out to you shortly. ` +
@@ -313,10 +324,18 @@ export async function processMessage(
             websiteVisited: siteProfile.name
           }
         };
-      } else if (shouldUseAI(body)) {
-        // The user might ask a follow-up question instead of providing a name.
-        // Let it fall through to the main AI handler.
-      } else {
+      }
+
+      // If the input is not a phone number, treat it as the user's name.
+      // The original `else if (shouldUseAI(body))` was too aggressive and
+      // was misinterpreting names as AI queries, breaking the flow.
+      // A simple name should not trigger the AI when we are expecting a name.
+      // We will only fall through to the AI if the input is clearly a question,
+      // not just any text that `shouldUseAI` might think is complex.
+      const isClearlyAQuestion = body.includes('?') || ['what', 'how', 'why', 'where', 'when', 'who'].some(q => body.toLowerCase().startsWith(q));
+
+      if (!isClearlyAQuestion) {
+        // This block now correctly captures the name.
         const nameMatch = body.match(
           /(?:my\s+name\s+is|i'm|i\s+am)\s+([a-z\s]+)/i
         );
@@ -346,6 +365,10 @@ export async function processMessage(
           ]
         };
       }
+      // If it IS a question, we do nothing here and let it fall through
+      // to the `shouldUseAI(body)` check below, which is the correct behavior
+      // for handling follow-up questions.
+
     }
 
     /*
